@@ -11,7 +11,7 @@ export function saveHighScore(score: number): void {
   existingScores.push(score);
   const updatedScores: number[] = existingScores.sort((a: number, b: number) => b - a)
     .slice(0, MAX_HIGH_SCORES);
-    localStorage.setItem('highScores', JSON.stringify(updatedScores));
+  localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
 export function getHighScores(): number[] {
