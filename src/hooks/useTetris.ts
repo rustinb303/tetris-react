@@ -6,7 +6,6 @@ import { useInterval } from './useInterval';
 
 const MAX_HIGH_SCORES = 10;
 
-// Function... seems self explanatory to me 
 export function saveHighScore(score: number): void {
   const existingScores: number[] = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
@@ -15,7 +14,6 @@ export function saveHighScore(score: number): void {
     localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
-// Function... also self explanatory 
 export function getHighScores(): number[] {
   try {
     const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
@@ -25,14 +23,12 @@ export function getHighScores(): number[] {
   }
 }
 
-// this does something with the board, but I'm not sure what
 enum TickSpeed {
   Normal = 800,
   Sliding = 100,
   Fast = 50,
 }
 
-// main function. todo: add comments
 export function useTetris() {
   const [score, setScore] = useState(0);
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
