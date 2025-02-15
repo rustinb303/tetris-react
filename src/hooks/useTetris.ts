@@ -1,7 +1,8 @@
-import    {useCallback, useEffect, useState } from 'react';
-import      {Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
-import {  useInterval } from './useInterval';
-import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock,} from './useTetrisBoard';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
+import { BOARD_HEIGHT, getEmptyBoard, getRandomBlock, hasCollisions, useTetrisBoard } from './useTetrisBoard';
+import { useInterval } from './useInterval';
 
 const max_High_scores = 10;
 
