@@ -1,8 +1,8 @@
 import React from 'react';
-import { getHighScores } from '../hooks/useTetris';
+import { GetHighScores } from '../hooks/useTetris';
 
 function HighScores() {
-  const highScores = getHighScores().slice(0, 10);
+  const highScores = GetHighScores().slice(0, 10);
   
   if (highScores.length === 0) {
     return (
