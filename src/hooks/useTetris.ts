@@ -8,10 +8,10 @@ const MAX_HIGH_SCORES = 10;
 
 // Function... seems self explanatory to me 
 export function saveHighScore(score: number): void {
-  const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+  const existingScores: number[] = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
-  const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, max_High_scores);
+  const updatedScores: number[] = existingScores.sort((a: number, b: number) => b - a)
+    .slice(0, MAX_HIGH_SCORES);
     localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
@@ -148,7 +148,7 @@ export function useTetris() {
 
     let isPressingLeft = false;
     let isPressingRight = false;
-    let moveIntervalID: ReturnType<typeof setInterval> | undefined;
+    let moveIntervalID: ReturnType<typeof setInterval> | undefined = undefined;
 
     const updateMovementInterval = () => {
       clearInterval(moveIntervalID);
