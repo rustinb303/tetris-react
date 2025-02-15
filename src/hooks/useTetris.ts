@@ -15,10 +15,12 @@ export function saveHighScore(score: number): void {
 }
 
 // Function... also self explanatory 
-export function GetHighScores(): number[] {
-      try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+export function getHighScores(): number[] {
+  try {
+    const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
     return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
-  } catch {return [];
+  } catch {
+    return [];
   }
 }
 
@@ -233,7 +235,7 @@ export function useTetris() {
     isPlaying,
     score,
     upcomingBlocks,
-    highScores: GetHighScores(),
+    highScores: getHighScores(),
   };
 }
 
