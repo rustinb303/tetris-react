@@ -1,35 +1,57 @@
-import    {useCallback, useEffect, useState } from 'react';
-import      {Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
-import {  useInterval } from './useInterval';
-import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock,} from './useTetrisBoard';
+import { useCallback, useEffect, useState } from 'react';
+import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
+import { useInterval } from './useInterval';
+import { 
+  useTetrisBoard,
+  hasCollisions,
+  BOARD_HEIGHT,
+  getEmptyBoard,
+  getRandomBlock
+} from './useTetrisBoard';
 
-const max_High_scores = 10;
+const MAX_HIGH_SCORES = 10;
 
-// Function... seems self explanatory to me 
+/**
+ * Saves a score to the high scores list in localStorage.
+ * Only keeps the top MAX_HIGH_SCORES scores in descending order.
+ */
 export function saveHighScore(score: number): void {
   const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
   const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, max_High_scores);
+    .slice(0, MAX_HIGH_SCORES);
     localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
-// Function... also self explanatory 
-export function GetHighScores(): number[] {
-      try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
-  } catch {return [];
+/**
+ * Retrieves the high scores list from localStorage.
+ * Returns scores in descending order, limited to MAX_HIGH_SCORES entries.
+ */
+export function getHighScores(): number[] {
+  try {
+    const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, MAX_HIGH_SCORES) : [];
+  } catch {
+    return [];
   }
 }
 
-// this does something with the board, but I'm not sure what
+/**
+ * Game tick speed in milliseconds for different states
+ */
 enum TickSpeed {
+  /** Regular falling speed */
   Normal = 800,
+  /** Speed when piece is sliding into place */
   Sliding = 100,
+  /** Speed when soft dropping (pressing down) */
   Fast = 50,
 }
 
-// main function. todo: add comments
+/**
+ * Custom hook that manages the Tetris game state.
+ * Handles game initialization, piece movement, scoring, and high scores.
+ */
 export function useTetris() {
   const [score, setScore] = useState(0);
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
@@ -233,10 +255,14 @@ export function useTetris() {
     isPlaying,
     score,
     upcomingBlocks,
-    highScores: GetHighScores(),
+    highScores: getHighScores(),
   };
 }
 
+/**
+ * Calculates points based on the number of lines cleared at once.
+ * Points increase exponentially with more lines cleared simultaneously.
+ */
 function getPoints(numCleared: number): number {
   switch (numCleared) {
     case 0:
@@ -254,6 +280,10 @@ function getPoints(numCleared: number): number {
   }
 }
 
+/**
+ * Adds a tetris piece to the board at the specified position.
+ * Used for both rendering the current piece and committing it to the board.
+ */
 function addShapeToBoard(
   board: BoardShape,
   droppingBlock: Block,
