@@ -133,7 +133,11 @@
 
     <script>
         // Socket.io connection
-        const socket = io();
+        const socket = io({
+            path: '/socket.io',
+            transports: ['websocket', 'polling'],
+            withCredentials: false
+        });
         let currentSessionId = null;
         
         // DOM elements
@@ -262,11 +266,15 @@
             startBtn.disabled = true;
             startBtn.textContent = 'Starting...';
             
-            fetch('/api/sessions', {
+            // Get the base URL without credentials
+            const baseUrl = window.location.origin;
+            
+            fetch(`${baseUrl}/api/sessions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     task_description: description
                 })

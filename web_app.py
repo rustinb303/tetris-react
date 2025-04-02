@@ -12,7 +12,7 @@ from meta_agent_generator import MetaAgentGenerator
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24).hex()
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
 
 active_sessions = {}
 
