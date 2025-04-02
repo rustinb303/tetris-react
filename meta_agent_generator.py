@@ -190,7 +190,7 @@ class MetaAgentGenerator:
         print("="*50 + "\n")
         
         
-        result = interview_task.execute()
+        result = interview_task.execute_sync()
         
         try:
             json_start = result.find('{')
@@ -262,7 +262,7 @@ class MetaAgentGenerator:
         print("Designing the optimal agent system based on your requirements...")
         print("="*50 + "\n")
         
-        result = design_task.execute()
+        result = design_task.execute_sync()
         
         try:
             json_start = result.find('{')
@@ -359,7 +359,7 @@ class MetaAgentGenerator:
         print(f"Generating code for {output_filename}...")
         print("="*50 + "\n")
         
-        result = code_task.execute()
+        result = code_task.execute_sync()
         
         if "```python" in result:
             code_start = result.find("```python") + 10
@@ -422,7 +422,7 @@ class MetaAgentGenerator:
         print("Evaluating the generated code...")
         print("="*50 + "\n")
         
-        result = evaluation_task.execute()
+        result = evaluation_task.execute_sync()
         
         is_approved = "APPROVED" in result.upper() and "NEEDS REVISION" not in result
         
