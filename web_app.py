@@ -105,7 +105,9 @@ class MetaAgentSession:
                 'message': 'Generating code...'
             })
             
-            output_filename = f"{self.task_description.lower().replace(' ', '_')[:20]}.py"
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_filename = f"{self.task_description.lower().replace(' ', '_')[:20]}_{timestamp}.py"
             self.output_filename = output_filename
             self.send_agent_message(f"Generating code for {output_filename}...")
             self.code_results = generator.generate_code(self.design_results, output_filename)

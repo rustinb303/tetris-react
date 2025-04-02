@@ -543,11 +543,12 @@ def main():
     if len(sys.argv) >= 3:
         output_filename = sys.argv[2]
     else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         task_words = task_description.lower().split()
         if len(task_words) > 3:
             task_words = task_words[:3]
         filename_base = "_".join(task_words)
-        output_filename = f"{filename_base}_agents.py"
+        output_filename = f"{filename_base}_{timestamp}_agents.py"
     
     generator = MetaAgentGenerator()
     result = generator.generate_agent_system(task_description, output_filename)
