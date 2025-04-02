@@ -49,6 +49,9 @@ class MetaAgentSession:
     def run_meta_agent_process(self):
         """Run the meta-agent process in a separate thread."""
         self.is_running = True
+        self.user_responses = {}
+        self.waiting_for_response = False
+        self.current_question = None
         
         try:
             generator = MetaAgentGenerator()
@@ -60,8 +63,30 @@ class MetaAgentSession:
                 'message': 'Starting interview process...'
             })
             
-            self.send_agent_message("I'll ask you some questions to understand your requirements better.")
-            self.interview_results = generator.interview_user(self.task_description)
+            def interview_callback(message, expect_response=False):
+                self.send_agent_message(message)
+                
+                if expect_response:
+                    self.waiting_for_response = True
+                    self.current_question = message
+                    
+                    max_wait_time = 300  # 5 minutes timeout
+                    wait_start = time.time()
+                    
+                    while self.waiting_for_response:
+                        time.sleep(0.5)
+                        if time.time() - wait_start > max_wait_time:
+                            self.waiting_for_response = False
+                            return "No response received"
+                    
+                    return self.user_responses.get(message, "")
+                
+                return None
+            
+            self.interview_results = generator.interview_user(
+                self.task_description, 
+                callback=interview_callback
+            )
             
             self.current_stage = "design"
             socketio.emit('status_update', {
@@ -102,26 +127,37 @@ class MetaAgentSession:
                 'message': 'Creating run script...'
             })
             
+            code_path = generator.save_code(self.code_results, output_filename)
+            
             if is_approved:
-                code_path = generator.save_code(self.code_results, output_filename)
                 script_name = generator.create_run_script(output_filename)
+                
+                completion_message = (
+                    f"✅ Task complete! Generated files:\n\n"
+                    f"- {output_filename}: Main agent system implementation\n"
+                    f"- {script_name}: Run script for easy execution\n\n"
+                    f"You can run the system with: ./{script_name}"
+                )
+                self.send_agent_message(completion_message)
+                
+                socketio.emit('process_complete', {
+                    'session_id': self.session_id,
+                    'output_filename': output_filename,
+                    'script_name': script_name
+                })
             else:
-                self.send_agent_message("⚠️ The generated code needs revision. Please check the evaluation results.")
-                return
-            
-            completion_message = (
-                f"✅ Task complete! Generated files:\n\n"
-                f"- {output_filename}: Main agent system implementation\n"
-                f"- {script_name}: Run script for easy execution\n\n"
-                f"You can run the system with: ./{script_name}"
-            )
-            self.send_agent_message(completion_message)
-            
-            socketio.emit('process_complete', {
-                'session_id': self.session_id,
-                'output_filename': output_filename,
-                'script_name': script_name
-            })
+                self.send_agent_message(
+                    f"⚠️ The generated code needs revision. Here are the evaluation results:\n\n"
+                    f"{self.evaluation_results}\n\n"
+                    f"The code has been saved to {output_filename} for your reference."
+                )
+                
+                socketio.emit('process_complete', {
+                    'session_id': self.session_id,
+                    'output_filename': output_filename,
+                    'evaluation_results': self.evaluation_results,
+                    'needs_revision': True
+                })
             
         except Exception as e:
             error_message = f"Error in meta-agent process: {str(e)}"
@@ -270,7 +306,11 @@ def handle_user_message(data):
     session = active_sessions[session_id]
     message = session.send_user_message(content)
     
-    if not session.is_running:
+    if session.is_running and hasattr(session, 'waiting_for_response') and session.waiting_for_response:
+        if hasattr(session, 'current_question') and session.current_question:
+            session.user_responses[session.current_question] = content
+            session.waiting_for_response = False
+    elif not session.is_running:
         response = "I've received your message, but the meta-agent process has already completed."
         session.send_agent_message(response)
 

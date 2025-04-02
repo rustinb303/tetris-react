@@ -139,76 +139,107 @@ class MetaAgentGenerator:
             tools=[]
         )
     
-    def interview_user(self, task_description: str) -> Dict[str, Any]:
+    def interview_user(self, task_description: str, callback=None) -> Dict[str, Any]:
         """
         Interview the user about their requirements.
         
         Args:
             task_description: Initial task description from the user
+            callback: Optional callback function to handle interactive Q&A
             
         Returns:
             Dictionary of user requirements
         """
         interviewer = self.create_interviewer_agent()
         
-        interview_task = Task(
-            description=f"""
-            Interview the user about their requirements for: "{task_description}"
-            
-            Ask specific questions to understand:
-            1. What is the main goal of the agent system?
-            2. What specific tasks should the agents perform?
-            3. What types of agents would be most effective for this task?
-            4. What tools or external resources might the agents need?
-            5. How should the agents collaborate or share information?
-            6. What output format is expected from the system?
-            7. Are there any specific constraints or requirements?
-            
-            Based on the answers, create a structured JSON object with the following fields:
-            - main_goal: The primary goal of the system
-            - tasks: List of specific tasks to perform
-            - agent_types: List of agent types that would be effective
-            - tools_needed: List of tools or resources needed
-            - collaboration_method: How agents should collaborate
-            - output_format: Expected output format
-            - constraints: Any specific constraints or requirements
-            
-            The user has provided this initial description: "{task_description}"
-            
-            Analyze this description and ask follow-up questions to fill in any gaps.
-            Return your final analysis as a JSON object.
-            """,
-            agent=interviewer,
-            expected_output="A JSON object containing detailed user requirements"
-        )
+        standard_questions = [
+            "What is the main goal of your agent system?",
+            "What specific tasks should the agents perform?",
+            "What types of agents would be most effective for this task?",
+            "What tools or external resources might the agents need?",
+            "How should the agents collaborate or share information?",
+            "What output format do you expect from the system?",
+            "Are there any specific constraints or requirements?"
+        ]
         
-        print("\n" + "="*50)
-        print("🤖 INTERVIEWER AGENT")
-        print("="*50)
-        print("I'll ask you some questions to understand your requirements better.")
-        print("Please provide detailed answers to help me design the perfect agent system for you.")
-        print("="*50 + "\n")
-        
-        
-        result = interview_task.execute_sync()
-        
-        try:
-            result_str = result.raw
-            json_start = result_str.find('{')
-            json_end = result_str.rfind('}') + 1
-            json_str = result_str[json_start:json_end]
-            requirements = json.loads(json_str)
-        except (json.JSONDecodeError, ValueError) as e:
-            print(f"Error parsing requirements: {e}")
+        if callback:
+            callback("I'll ask you some questions to understand your requirements better.")
+            
+            answers = {}
+            for i, question in enumerate(standard_questions):
+                response = callback(question, expect_response=True)
+                answers[f"question_{i+1}"] = response
+            
             requirements = {
-                "main_goal": task_description,
-                "tasks": ["Analyze the task", "Generate solution"],
-                "agent_types": ["Analyzer", "Generator"],
-                "tools_needed": [],
-                "collaboration_method": "Sequential",
-                "output_format": "Text report",
-                "constraints": []
+                "main_goal": answers.get("question_1", task_description),
+                "tasks": [t.strip() for t in answers.get("question_2", "Analyze and solve").split(",")],
+                "agent_types": [t.strip() for t in answers.get("question_3", "Analyzer, Generator").split(",")],
+                "tools_needed": [t.strip() for t in answers.get("question_4", "").split(",") if t.strip()],
+                "collaboration_method": answers.get("question_5", "Sequential"),
+                "output_format": answers.get("question_6", "Text report"),
+                "constraints": [t.strip() for t in answers.get("question_7", "").split(",") if t.strip()]
             }
+            
+            callback(f"Thank you for your answers. I'll design an agent system based on these requirements.")
+            
+        else:
+            interview_task = Task(
+                description=f"""
+                Interview the user about their requirements for: "{task_description}"
+                
+                Ask specific questions to understand:
+                1. What is the main goal of the agent system?
+                2. What specific tasks should the agents perform?
+                3. What types of agents would be most effective for this task?
+                4. What tools or external resources might the agents need?
+                5. How should the agents collaborate or share information?
+                6. What output format is expected from the system?
+                7. Are there any specific constraints or requirements?
+                
+                Based on the answers, create a structured JSON object with the following fields:
+                - main_goal: The primary goal of the system
+                - tasks: List of specific tasks to perform
+                - agent_types: List of agent types that would be effective
+                - tools_needed: List of tools or resources needed
+                - collaboration_method: How agents should collaborate
+                - output_format: Expected output format
+                - constraints: Any specific constraints or requirements
+                
+                The user has provided this initial description: "{task_description}"
+                
+                Analyze this description and ask follow-up questions to fill in any gaps.
+                Return your final analysis as a JSON object.
+                """,
+                agent=interviewer,
+                expected_output="A JSON object containing detailed user requirements"
+            )
+            
+            print("\n" + "="*50)
+            print("🤖 INTERVIEWER AGENT")
+            print("="*50)
+            print("I'll ask you some questions to understand your requirements better.")
+            print("Please provide detailed answers to help me design the perfect agent system for you.")
+            print("="*50 + "\n")
+            
+            result = interview_task.execute_sync()
+            
+            try:
+                result_str = result.raw
+                json_start = result_str.find('{')
+                json_end = result_str.rfind('}') + 1
+                json_str = result_str[json_start:json_end]
+                requirements = json.loads(json_str)
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"Error parsing requirements: {e}")
+                requirements = {
+                    "main_goal": task_description,
+                    "tasks": ["Analyze the task", "Generate solution"],
+                    "agent_types": ["Analyzer", "Generator"],
+                    "tools_needed": [],
+                    "collaboration_method": "Sequential",
+                    "output_format": "Text report",
+                    "constraints": []
+                }
         
         self.user_requirements = requirements
         return requirements
@@ -414,6 +445,22 @@ class MetaAgentGenerator:
             Conclude with an overall assessment: APPROVED or NEEDS REVISION.
             
             If NEEDS REVISION, clearly explain what changes are needed.
+            
+            Format your response with clear section headers:
+            
+            (your assessment)
+            
+            (your assessment)
+            
+            (your assessment)
+            
+            (your assessment)
+            
+            (your assessment)
+            
+            APPROVED or NEEDS REVISION
+            
+            (your recommendations)
             """,
             agent=evaluator,
             expected_output="Detailed code evaluation with approval status"
@@ -430,7 +477,7 @@ class MetaAgentGenerator:
         result_str = result.raw
         is_approved = "APPROVED" in result_str.upper() and "NEEDS REVISION" not in result_str
         
-        return is_approved, result
+        return is_approved, result_str
     
     def save_code(self, code: str, filename: str) -> str:
         """
