@@ -12,9 +12,6 @@ class SupabaseTool(BaseTool):
     
     name: str = "SupabaseTool"
     description: str = "Tool for reading and writing data to a Supabase database."
-    table_name: str
-    url: Optional[str] = None
-    key: Optional[str] = None
     
     def __init__(self, table_name: str, url: Optional[str] = None, key: Optional[str] = None):
         """
@@ -25,15 +22,16 @@ class SupabaseTool(BaseTool):
             url: The Supabase URL (defaults to SUPABASE_URL env var)
             key: The Supabase key (defaults to SUPABASE_KEY env var)
         """
-        url_value = url or os.getenv("SUPABASE_URL")
-        key_value = key or os.getenv("SUPABASE_KEY") or get_api_key("supabase")
+        super().__init__()
         
-        super().__init__(table_name=table_name, url=url_value, key=key_value)
+        self.table_name = table_name
+        self.url = url or os.getenv("SUPABASE_URL")
+        self.key = key or os.getenv("SUPABASE_KEY") or get_api_key("supabase")
         
         if not self.url or not self.key:
             raise ValueError("Supabase URL and key must be provided or set in environment variables")
         
-        self.supabase: Client = create_client(self.url, self.key)
+        self.supabase = create_client(self.url, self.key)
     
     def _run(self, operation: str, **kwargs) -> Any:
         """
