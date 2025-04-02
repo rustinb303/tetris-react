@@ -38,6 +38,8 @@ def get_llm(provider: str, model: str):
             return ChatOpenAI(model=model, temperature=0.7)
         elif provider.lower() == "anthropic":
             try:
+                if not model.startswith("claude-"):
+                    print(f"Warning: Model name '{model}' doesn't follow Anthropic naming convention. Using as-is.")
                 return ChatAnthropic(model=model, temperature=0.7)
             except Exception as e:
                 print(f"Error initializing Anthropic model: {e}")
@@ -45,6 +47,9 @@ def get_llm(provider: str, model: str):
                 return ChatOpenAI(model="gpt-4o", temperature=0.7)
         elif provider.lower() == "gemini":
             try:
+                if not model.startswith("google/") and model.startswith("gemini-"):
+                    model = f"google/{model}"
+                    print(f"Adding provider prefix to model name: {model}")
                 return ChatGoogleGenerativeAI(model=model, temperature=0.7)
             except Exception as e:
                 print(f"Error initializing Gemini model: {e}")
@@ -155,7 +160,7 @@ class MetaAgentGenerator:
             You can spot potential issues, suggest improvements, and ensure the code 
             meets all requirements and follows best practices.""",
             verbose=True,
-            llm=get_llm("gemini", "gemini-2.0-flash"),
+            llm=get_llm("openai", "gpt-4o"),
             tools=[]
         )
     
