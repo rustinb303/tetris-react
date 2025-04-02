@@ -11,6 +11,7 @@ from src.models.crew_manager import CrewManager
 from src.utils.env_loader import load_env_vars
 from src.utils.database_tools import SupabaseTool
 from src.utils.spreadsheet_tools import GoogleSheetsTool
+from src.utils.mock_database import MockDatabaseTool
 from src.utils.tool_registry import ToolRegistry
 
 
@@ -27,17 +28,8 @@ def run_data_integration_demo(topic="AI trends"):
     
     tool_registry = ToolRegistry()
     
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_KEY")
-    
-    if not supabase_url or not supabase_key:
-        print("Error: Supabase URL and key must be set in environment variables.")
-        print("Please add the following to your .env file:")
-        print("SUPABASE_URL=your-supabase-url")
-        print("SUPABASE_KEY=your-supabase-key")
-        sys.exit(1)
-    
-    research_db_tool = SupabaseTool(table_name="research_data", url=supabase_url, key=supabase_key)
+    print("Using mock database for demonstration purposes...")
+    research_db_tool = MockDatabaseTool(table_name="research_data")
     tool_registry.register_tool("research_db", research_db_tool)
     
     print("Creating agents with database access...")
@@ -78,15 +70,18 @@ def run_data_integration_demo(topic="AI trends"):
         description=f"""
         Research {topic} thoroughly and store your findings in the database.
         
-        Use the research_db tool to store your findings with the following structure:
+        Use the research_db tool to store your findings. When using the tool, provide a simple JSON object as input:
         
         ```
-        Action: SupabaseTool
+        Action: MockDatabaseTool
         Action Input: {{"operation": "insert", "data": {{"topic": "{topic}", "subtopic": "History", "content": "Content about history...", "source": "Source URL or reference"}}}}
         ```
         
-        IMPORTANT: Always specify "operation" as the first parameter with values like "insert", "select", "update", or "delete".
-        For insert operations, include a "data" parameter with the content to store.
+        IMPORTANT: 
+        - The tool name is "MockDatabaseTool"
+        - For insert operations, provide a JSON object with "operation" and "data" fields
+        - The "data" field should contain the content to store
+        - Do not escape quotes or add extra backslashes
         
         Store at least 3 different subtopics with detailed information.
         """,
@@ -101,11 +96,14 @@ def run_data_integration_demo(topic="AI trends"):
         
         Use the research_db tool to retrieve the data:
         ```
-        Action: SupabaseTool
+        Action: MockDatabaseTool
         Action Input: {{"operation": "select", "filters": {{"topic": "{topic}"}}}}
         ```
         
-        IMPORTANT: Always specify "operation" as the first parameter with values like "select", "insert", "update", or "delete".
+        IMPORTANT: 
+        - The tool name is "MockDatabaseTool"
+        - For select operations, provide a JSON object with "operation" and optional "filters" fields
+        - Do not escape quotes or add extra backslashes
         
         Analyze the data and provide:
         1. A summary of the key findings
@@ -148,13 +146,6 @@ def run_data_integration_demo(topic="AI trends"):
 
 
 if __name__ == "__main__":
-    if not os.getenv("SUPABASE_URL") or not os.getenv("SUPABASE_KEY"):
-        print("Error: Supabase credentials are not set in environment variables.")
-        print("Please add the following to your .env file or set them in your environment:")
-        print("SUPABASE_URL=your-supabase-url")
-        print("SUPABASE_KEY=your-supabase-key")
-        sys.exit(1)
-    
     topic = sys.argv[1] if len(sys.argv) > 1 else "AI trends"
     
     run_data_integration_demo(topic)
