@@ -33,15 +33,35 @@ def get_llm(provider: str, model: str):
     """
     load_env_vars()
     
-    if provider.lower() == "openai":
-        return ChatOpenAI(model=model, temperature=0.7)
-    elif provider.lower() == "anthropic":
-        return ChatAnthropic(model=model, temperature=0.7)
-    elif provider.lower() == "gemini":
-        return ChatGoogleGenerativeAI(model=model, temperature=0.7)
-    elif provider.lower() == "grok":
-        return ChatGroq(model=model, temperature=0.7)
-    else:
+    try:
+        if provider.lower() == "openai":
+            return ChatOpenAI(model=model, temperature=0.7)
+        elif provider.lower() == "anthropic":
+            try:
+                return ChatAnthropic(model=model, temperature=0.7)
+            except Exception as e:
+                print(f"Error initializing Anthropic model: {e}")
+                print("Falling back to OpenAI model...")
+                return ChatOpenAI(model="gpt-4o", temperature=0.7)
+        elif provider.lower() == "gemini":
+            try:
+                return ChatGoogleGenerativeAI(model=model, temperature=0.7)
+            except Exception as e:
+                print(f"Error initializing Gemini model: {e}")
+                print("Falling back to OpenAI model...")
+                return ChatOpenAI(model="gpt-4o", temperature=0.7)
+        elif provider.lower() == "grok":
+            try:
+                return ChatGroq(model=model, temperature=0.7)
+            except Exception as e:
+                print(f"Error initializing Grok model: {e}")
+                print("Falling back to OpenAI model...")
+                return ChatOpenAI(model="gpt-4o", temperature=0.7)
+        else:
+            return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
+    except Exception as e:
+        print(f"Error initializing LLM: {e}")
+        print("Falling back to OpenAI gpt-4o-mini model...")
         return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
 
 
@@ -152,32 +172,57 @@ class MetaAgentGenerator:
         """
         interviewer = self.create_interviewer_agent()
         
-        standard_questions = [
-            "What is the main goal of your agent system?",
-            "What specific tasks should the agents perform?",
-            "What types of agents would be most effective for this task?",
-            "What tools or external resources might the agents need?",
-            "How should the agents collaborate or share information?",
-            "What output format do you expect from the system?",
-            "Are there any specific constraints or requirements?"
+        improved_questions = [
+            "What specific problem or task are you trying to solve with this agent system?",
+            "What key capabilities should these agents have to accomplish this task effectively?",
+            "What data sources, APIs, or tools would be most valuable for the agents to access?",
+            "How would you prefer the agents to collaborate - hierarchically with a lead agent, as equal partners, or in specialized teams?",
+            "What format should the final output take (e.g., report, code, visualization, database entries)?",
+            "Are there any specific performance requirements, ethical guidelines, or constraints the system must follow?"
         ]
         
         if callback:
-            callback("I'll ask you some questions to understand your requirements better.")
+            all_questions = "\n\n".join([f"{i+1}. {q}" for i, q in enumerate(improved_questions)])
+            
+            callback(f"I'll ask you some questions to understand your requirements better. Please answer all of them in your response:\n\n{all_questions}", expect_response=True)
+            
+            combined_response = callback("Please go ahead with your answers.", expect_response=True)
             
             answers = {}
-            for i, question in enumerate(standard_questions):
-                response = callback(question, expect_response=True)
-                answers[f"question_{i+1}"] = response
+            for i, question in enumerate(improved_questions):
+                marker = f"{i+1}."
+                next_marker = f"{i+2}." if i < len(improved_questions) - 1 else None
+                
+                start_idx = combined_response.find(marker)
+                if start_idx == -1:
+                    keywords = question.split()[:3]
+                    for keyword in keywords:
+                        if keyword.lower() in combined_response.lower():
+                            start_idx = combined_response.lower().find(keyword.lower())
+                            break
+                
+                if start_idx != -1:
+                    if next_marker and next_marker in combined_response:
+                        end_idx = combined_response.find(next_marker)
+                        answer = combined_response[start_idx:end_idx].strip()
+                    else:
+                        answer = combined_response[start_idx:].strip()
+                    
+                    answers[f"question_{i+1}"] = answer
+                else:
+                    answers[f"question_{i+1}"] = ""
+            
+            if all(not v for v in answers.values()):
+                for i in range(len(improved_questions)):
+                    answers[f"question_{i+1}"] = combined_response
             
             requirements = {
                 "main_goal": answers.get("question_1", task_description),
                 "tasks": [t.strip() for t in answers.get("question_2", "Analyze and solve").split(",")],
-                "agent_types": [t.strip() for t in answers.get("question_3", "Analyzer, Generator").split(",")],
-                "tools_needed": [t.strip() for t in answers.get("question_4", "").split(",") if t.strip()],
-                "collaboration_method": answers.get("question_5", "Sequential"),
-                "output_format": answers.get("question_6", "Text report"),
-                "constraints": [t.strip() for t in answers.get("question_7", "").split(",") if t.strip()]
+                "tools_needed": [t.strip() for t in answers.get("question_3", "").split(",") if t.strip()],
+                "collaboration_method": answers.get("question_4", "Sequential"),
+                "output_format": answers.get("question_5", "Text report"),
+                "constraints": [t.strip() for t in answers.get("question_6", "").split(",") if t.strip()]
             }
             
             callback(f"Thank you for your answers. I'll design an agent system based on these requirements.")
