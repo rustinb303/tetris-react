@@ -1,0 +1,106 @@
+name: "Research and Analysis Crew"
+description: "A crew that researches a topic and provides analysis"
+process: "sequential"
+verbose: true
+memory: true
+cache: false
+step_callback: false
+
+agents:
+  researcher:
+    name: "Researcher"
+    role: "Senior Research Analyst"
+    goal: "Find comprehensive information on the given topic"
+    backstory: "You are an expert researcher with a knack for finding relevant information quickly."
+    verbose: true
+    allow_delegation: true
+    model: "gpt-4"
+    max_iterations: 15
+    temperature: 0.7
+    system_prompt: "You are a meticulous researcher who leaves no stone unturned."
+    human_input_mode: "NEVER"
+    tools: []
+
+  analyst:
+    name: "Analyst"
+    role: "Data Analyst"
+    goal: "Analyze the research data and extract meaningful insights"
+    backstory: "You are a skilled data analyst who can identify patterns and draw conclusions from complex information."
+    verbose: true
+    allow_delegation: false
+    model: "gpt-4"
+    max_iterations: 10
+    temperature: 0.5
+    system_prompt: "You are an analytical thinker who excels at making sense of complex data."
+    human_input_mode: "NEVER"
+    tools: []
+
+  writer:
+    name: "Writer"
+    role: "Content Writer"
+    goal: "Create a well-structured report based on the analysis"
+    backstory: "You are a talented writer who can communicate complex ideas clearly and engagingly."
+    verbose: true
+    allow_delegation: false
+    model: "gpt-3.5-turbo"
+    max_iterations: 5
+    temperature: 0.8
+    system_prompt: "You are a skilled writer who can create compelling narratives from analytical content."
+    human_input_mode: "NEVER"
+    tools: []
+
+  reviewer:
+    name: "Reviewer"
+    role: "Quality Assurance Specialist"
+    goal: "Review the report for accuracy, clarity, and completeness"
+    backstory: "You are a detail-oriented reviewer with a keen eye for quality and consistency."
+    verbose: true
+    allow_delegation: false
+    model: "gpt-4"
+    max_iterations: 3
+    temperature: 0.3
+    system_prompt: "You are a thorough reviewer who ensures all content meets the highest standards."
+    human_input_mode: "NEVER"
+    tools: []
+
+tasks:
+  research:
+    name: "Research Topic"
+    description: "Research the given topic thoroughly and compile relevant information"
+    expected_output: "A comprehensive collection of information on the topic"
+    agent: "researcher"
+    async_execution: false
+
+  analyze:
+    name: "Analyze Research"
+    description: "Analyze the research data to identify key insights and patterns"
+    expected_output: "A detailed analysis of the research with key insights highlighted"
+    agent: "analyst"
+    async_execution: false
+
+  write:
+    name: "Write Report"
+    description: "Create a well-structured report based on the analysis"
+    expected_output: "A clear, engaging report that effectively communicates the findings"
+    agent: "writer"
+    async_execution: false
+
+  review:
+    name: "Review Report"
+    description: "Review the report for accuracy, clarity, and completeness"
+    expected_output: "A final report with any necessary corrections or improvements"
+    agent: "reviewer"
+    async_execution: false
+
+subgroups:
+  research_team:
+    name: "Research Team"
+    agents: ["researcher", "analyst"]
+    tasks: ["research", "analyze"]
+    process: "sequential"
+
+  content_team:
+    name: "Content Team"
+    agents: ["writer", "reviewer"]
+    tasks: ["write", "review"]
+    process: "sequential"
