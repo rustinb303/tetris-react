@@ -22,16 +22,19 @@ class SupabaseTool(BaseTool):
             url: The Supabase URL (defaults to SUPABASE_URL env var)
             key: The Supabase key (defaults to SUPABASE_KEY env var)
         """
-        super().__init__()
+        super().__init__(
+            name="SupabaseTool",
+            description=f"Tool for reading and writing data to the {table_name} table in Supabase."
+        )
         
-        self.table_name = table_name
-        self.url = url or os.getenv("SUPABASE_URL")
-        self.key = key or os.getenv("SUPABASE_KEY") or get_api_key("supabase")
+        self._table_name = table_name
+        self._url = url or os.getenv("SUPABASE_URL")
+        self._key = key or os.getenv("SUPABASE_KEY") or get_api_key("supabase")
         
-        if not self.url or not self.key:
+        if not self._url or not self._key:
             raise ValueError("Supabase URL and key must be provided or set in environment variables")
         
-        self.supabase = create_client(self.url, self.key)
+        self._supabase = create_client(self._url, self._key)
     
     def _run(self, operation: str, **kwargs) -> Any:
         """
@@ -54,7 +57,7 @@ class SupabaseTool(BaseTool):
             columns = kwargs.get("columns", "*")
             filters = kwargs.get("filters", {})
             
-            query = self.supabase.table(self.table_name).select(columns)
+            query = self._supabase.table(self._table_name).select(columns)
             
             for key, value in filters.items():
                 query = query.eq(key, value)
@@ -67,7 +70,7 @@ class SupabaseTool(BaseTool):
             if not data:
                 return "Error: No data provided for insert operation"
             
-            result = self.supabase.table(self.table_name).insert(data).execute()
+            result = self._supabase.table(self._table_name).insert(data).execute()
             return result.data
         
         elif operation == "update":
@@ -80,7 +83,7 @@ class SupabaseTool(BaseTool):
             if not filters:
                 return "Error: No filters provided for update operation"
             
-            query = self.supabase.table(self.table_name).update(data)
+            query = self._supabase.table(self._table_name).update(data)
             
             for key, value in filters.items():
                 query = query.eq(key, value)
@@ -94,7 +97,7 @@ class SupabaseTool(BaseTool):
             if not filters:
                 return "Error: No filters provided for delete operation"
             
-            query = self.supabase.table(self.table_name).delete()
+            query = self._supabase.table(self._table_name).delete()
             
             for key, value in filters.items():
                 query = query.eq(key, value)
