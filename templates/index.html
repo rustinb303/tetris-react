@@ -258,6 +258,10 @@
         
         // Functions
         function startSession(description) {
+            // Show loading state
+            startBtn.disabled = true;
+            startBtn.textContent = 'Starting...';
+            
             fetch('/api/sessions', {
                 method: 'POST',
                 headers: {
@@ -267,7 +271,14 @@
                     task_description: description
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Failed to start session');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 currentSessionId = data.session_id;
                 
@@ -286,8 +297,12 @@
                 updateProgress('interview');
             })
             .catch(error => {
-                console.error('Error starting session:', error);
-                alert('Error starting session. Please try again.');
+                console.error('Error starting session:', error.message);
+                alert(`Error starting session: ${error.message}`);
+                
+                // Reset button
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Conversation';
             });
         }
         

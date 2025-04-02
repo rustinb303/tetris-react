@@ -171,28 +171,38 @@ def index():
 @app.route('/api/sessions', methods=['POST'])
 def create_session():
     """Create a new meta-agent session."""
-    data = request.json
-    task_description = data.get('task_description', '')
-    
-    if not task_description:
-        return jsonify({'error': 'Task description is required'}), 400
-    
-    session_id = str(uuid.uuid4())
-    new_session = MetaAgentSession(session_id, task_description)
-    active_sessions[session_id] = new_session
-    
-    new_session.add_message(
-        "agent", 
-        f"Hello! I'll help you create an AI agent system for: {task_description}\n\n"
-        f"Let's start by gathering some information about your requirements."
-    )
-    
-    new_session.start_process()
-    
-    return jsonify({
-        'session_id': session_id,
-        'task_description': task_description
-    })
+    try:
+        data = request.json
+        task_description = data.get('task_description', '')
+        
+        if not task_description:
+            return jsonify({'error': 'Task description is required'}), 400
+        
+        session_id = str(uuid.uuid4())
+        new_session = MetaAgentSession(session_id, task_description)
+        active_sessions[session_id] = new_session
+        
+        new_session.add_message(
+            "agent", 
+            f"Hello! I'll help you create an AI agent system for: {task_description}\n\n"
+            f"Let's start by gathering some information about your requirements."
+        )
+        
+        try:
+            started = new_session.start_process()
+            if not started:
+                return jsonify({'error': 'Failed to start session process'}), 500
+        except Exception as e:
+            print(f"Error starting session process: {str(e)}")
+            return jsonify({'error': f'Error starting session: {str(e)}'}), 500
+        
+        return jsonify({
+            'session_id': session_id,
+            'task_description': task_description
+        })
+    except Exception as e:
+        print(f"Error creating session: {str(e)}")
+        return jsonify({'error': f'Error creating session: {str(e)}'}), 500
 
 
 @app.route('/api/sessions/<session_id>', methods=['GET'])
