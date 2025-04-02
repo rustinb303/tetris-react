@@ -81,7 +81,7 @@ class MetaAgentGenerator:
             the right questions to understand what a user needs. You excel at 
             extracting specific requirements and use cases.""",
             verbose=True,
-            llm=get_llm(self.default_provider, self.default_model),
+            llm=get_llm("openai", "gpt-4o"),
             tools=[]
         )
     
@@ -99,7 +99,7 @@ class MetaAgentGenerator:
             the perfect combination of specialized agents to solve complex problems. 
             You know how to break down tasks and assign them to the right agents.""",
             verbose=True,
-            llm=get_llm(self.default_provider, self.default_model),
+            llm=get_llm("openai", "gpt-4o"),
             tools=[]
         )
     
@@ -117,7 +117,7 @@ class MetaAgentGenerator:
             You can translate designs into clean, well-structured code that follows 
             best practices and is easy to understand and maintain.""",
             verbose=True,
-            llm=get_llm(self.default_provider, self.default_model),
+            llm=get_llm("anthropic", "claude-3-7-sonnet-20250219"),
             tools=[]
         )
     
@@ -135,7 +135,7 @@ class MetaAgentGenerator:
             You can spot potential issues, suggest improvements, and ensure the code 
             meets all requirements and follows best practices.""",
             verbose=True,
-            llm=get_llm(self.default_provider, self.default_model),
+            llm=get_llm("gemini", "gemini-2.0-flash"),
             tools=[]
         )
     
