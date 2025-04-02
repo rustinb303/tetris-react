@@ -1,35 +1,33 @@
-import    {useCallback, useEffect, useState } from 'react';
-import      {Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
-import {  useInterval } from './useInterval';
-import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock,} from './useTetrisBoard';
+import { useCallback, useEffect, useState } from 'react';
+import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
+import { useInterval } from './useInterval';
+import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock } from './useTetrisBoard';
 
-const max_High_scores = 10;
+const MAX_HIGH_SCORES = 10;
 
-// Function... seems self explanatory to me 
 export function saveHighScore(score: number): void {
   const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
   const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, max_High_scores);
+    .slice(0, MAX_HIGH_SCORES);
     localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
-// Function... also self explanatory 
-export function GetHighScores(): number[] {
-      try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
-  } catch {return [];
+export function getHighScores(): number[] {
+  try {
+    const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, MAX_HIGH_SCORES) : [];
+  } catch {
+    return [];
   }
 }
 
-// this does something with the board, but I'm not sure what
 enum TickSpeed {
-  Normal = 800,
-  Sliding = 100,
-  Fast = 50,
+  Normal = 800,   // Standard falling speed
+  Sliding = 100,  // Speed when block is about to be committed
+  Fast = 50,      // Speed when down arrow is pressed
 }
 
-// main function. todo: add comments
 export function useTetris() {
   const [score, setScore] = useState(0);
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
@@ -233,9 +231,10 @@ export function useTetris() {
     isPlaying,
     score,
     upcomingBlocks,
-    highScores: GetHighScores(),
+    highScores: getHighScores(),
   };
 }
+
 
 function getPoints(numCleared: number): number {
   switch (numCleared) {
@@ -253,6 +252,7 @@ function getPoints(numCleared: number): number {
       throw new Error('Unexpected number of rows cleared');
   }
 }
+
 
 function addShapeToBoard(
   board: BoardShape,
