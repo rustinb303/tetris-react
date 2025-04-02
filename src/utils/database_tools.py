@@ -12,6 +12,9 @@ class SupabaseTool(BaseTool):
     
     name: str = "SupabaseTool"
     description: str = "Tool for reading and writing data to a Supabase database."
+    table_name: str
+    url: Optional[str] = None
+    key: Optional[str] = None
     
     def __init__(self, table_name: str, url: Optional[str] = None, key: Optional[str] = None):
         """
