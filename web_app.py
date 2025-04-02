@@ -8,17 +8,7 @@ from flask import Flask, render_template, request, jsonify, session
 from flask_socketio import SocketIO, emit
 import uuid
 
-from meta_agent_generator import (
-    create_interviewer_agent,
-    create_architect_agent,
-    create_coder_agent,
-    create_evaluator_agent,
-    run_interview,
-    design_agent_system,
-    generate_code,
-    evaluate_code,
-    create_run_script
-)
+from meta_agent_generator import MetaAgentGenerator
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24).hex()
@@ -61,10 +51,7 @@ class MetaAgentSession:
         self.is_running = True
         
         try:
-            interviewer = create_interviewer_agent()
-            architect = create_architect_agent()
-            coder = create_coder_agent()
-            evaluator = create_evaluator_agent()
+            generator = MetaAgentGenerator()
             
             self.current_stage = "interview"
             socketio.emit('status_update', {
@@ -73,11 +60,8 @@ class MetaAgentSession:
                 'message': 'Starting interview process...'
             })
             
-            self.interview_results = run_interview(
-                interviewer, 
-                self.task_description,
-                callback=lambda msg: self.send_agent_message(msg)
-            )
+            self.send_agent_message("I'll ask you some questions to understand your requirements better.")
+            self.interview_results = generator.interview_user(self.task_description)
             
             self.current_stage = "design"
             socketio.emit('status_update', {
@@ -86,12 +70,8 @@ class MetaAgentSession:
                 'message': 'Designing agent system...'
             })
             
-            self.design_results = design_agent_system(
-                architect, 
-                self.task_description, 
-                self.interview_results,
-                callback=lambda msg: self.send_agent_message(msg)
-            )
+            self.send_agent_message("Designing the optimal agent system based on your requirements...")
+            self.design_results = generator.design_agents(self.interview_results)
             
             self.current_stage = "code"
             socketio.emit('status_update', {
@@ -102,15 +82,8 @@ class MetaAgentSession:
             
             output_filename = f"{self.task_description.lower().replace(' ', '_')[:20]}.py"
             self.output_filename = output_filename
-            
-            self.code_results = generate_code(
-                coder, 
-                self.task_description, 
-                self.interview_results, 
-                self.design_results, 
-                output_filename,
-                callback=lambda msg: self.send_agent_message(msg)
-            )
+            self.send_agent_message(f"Generating code for {output_filename}...")
+            self.code_results = generator.generate_code(self.design_results, output_filename)
             
             self.current_stage = "evaluate"
             socketio.emit('status_update', {
@@ -119,12 +92,8 @@ class MetaAgentSession:
                 'message': 'Evaluating code...'
             })
             
-            self.evaluation_results = evaluate_code(
-                evaluator, 
-                self.task_description, 
-                self.code_results,
-                callback=lambda msg: self.send_agent_message(msg)
-            )
+            self.send_agent_message("Evaluating the generated code...")
+            is_approved, self.evaluation_results = generator.evaluate_code(self.code_results, self.interview_results)
             
             self.current_stage = "complete"
             socketio.emit('status_update', {
@@ -133,7 +102,12 @@ class MetaAgentSession:
                 'message': 'Creating run script...'
             })
             
-            script_name = create_run_script(output_filename)
+            if is_approved:
+                code_path = generator.save_code(self.code_results, output_filename)
+                script_name = generator.create_run_script(output_filename)
+            else:
+                self.send_agent_message("⚠️ The generated code needs revision. Please check the evaluation results.")
+                return
             
             completion_message = (
                 f"✅ Task complete! Generated files:\n\n"
