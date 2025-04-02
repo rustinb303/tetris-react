@@ -230,6 +230,116 @@ agents:
     model: "grok:grok-2"  # xAI Grok model
 ```
 
+## Database and External Tool Integration
+
+This project includes integrations with various external tools and databases:
+
+### Supabase Integration
+
+Agents can read and write data to Supabase databases:
+
+```python
+from src.utils.database_tools import SupabaseTool
+
+# Create a Supabase tool
+supabase_tool = SupabaseTool(
+    table_name="your_table",
+    url=os.getenv("SUPABASE_URL"),
+    key=os.getenv("SUPABASE_KEY")
+)
+
+# Use the tool in your agent
+agent = Agent(
+    name="DataAgent",
+    tools=[supabase_tool],
+    # other configuration...
+)
+```
+
+To run a demo with Supabase integration:
+
+```bash
+./run_demo3.sh "Your topic"
+```
+
+### Google Sheets Integration
+
+Agents can also interact with Google Sheets:
+
+```python
+from src.utils.spreadsheet_tools import GoogleSheetsTools
+
+# Create a Google Sheets tool
+sheets_tool = GoogleSheetsTools(
+    credentials_path="path/to/credentials.json",
+    spreadsheet_id="your-spreadsheet-id"
+)
+
+# Use the tool in your agent
+agent = Agent(
+    name="SpreadsheetAgent",
+    tools=[sheets_tool],
+    # other configuration...
+)
+```
+
+## Model Context Protocol (MCP)
+
+This project includes an implementation of the [Model Context Protocol](https://modelcontextprotocol.io/) for standardized access to external data sources:
+
+### File System Integration
+
+```python
+from src.mcp import MCPClient
+from src.mcp.integrations import FileSystemServer
+from mcp_crewai_integration import MCPFileTool
+
+# Set up MCP
+client = MCPClient()
+fs_server = FileSystemServer(name="filesystem")
+client.register_server(fs_server)
+
+# Create MCP tool for CrewAI agents
+file_tool = MCPFileTool(client)
+
+# Use the tool in your agents
+agent = Agent(
+    name="FileAgent",
+    tools=[file_tool],
+    # other configuration...
+)
+```
+
+### Google Drive Integration
+
+```python
+from src.mcp.integrations import GoogleDriveServer
+from mcp_crewai_integration import MCPGoogleDriveTool
+
+# Set up MCP with Google Drive
+drive_server = GoogleDriveServer(
+    name="googledrive",
+    credentials_path="path/to/credentials.json"
+)
+client.register_server(drive_server)
+
+# Create MCP Google Drive tool
+drive_tool = MCPGoogleDriveTool(client)
+
+# Use the tool in your agents
+agent = Agent(
+    name="DriveAgent",
+    tools=[drive_tool],
+    # other configuration...
+)
+```
+
+To run a demo with MCP integration:
+
+```bash
+./run_mcp_demo.sh "Your topic"
+```
+
 ## API Keys
 
 To use multiple model providers, you need to set up API keys in a `.env` file:
