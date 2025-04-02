@@ -340,6 +340,46 @@ To run a demo with MCP integration:
 ./run_mcp_demo.sh "Your topic"
 ```
 
+## Meta-Agent System
+
+This project includes a meta-agent system that can interview users about their requirements and generate specialized agent configurations for specific tasks:
+
+### How It Works
+
+1. **Interview**: The system interviews you about your task requirements
+2. **Design**: AI agents design the optimal agent architecture for your task
+3. **Generate**: The system generates a complete, runnable Python file
+4. **Evaluate**: The code is evaluated for quality and completeness
+5. **Deploy**: A run script is created for easy execution
+
+### Usage
+
+Run the meta-agent system:
+
+```bash
+./run_meta_agent.sh "Your task description" [output_filename.py]
+```
+
+Example:
+
+```bash
+./run_meta_agent.sh "Create agents for jailbreak detection" jailbreak.py
+```
+
+This will:
+1. Interview you about your jailbreak detection requirements
+2. Design specialized agents for this task
+3. Generate a complete `jailbreak.py` file
+4. Create a `run_jailbreak.sh` script to execute it
+
+### Example Use Cases
+
+- **Jailbreak Detection**: Create agents that analyze LLM outputs for rule violations
+- **Content Creation**: Generate agents for collaborative content creation
+- **Research Automation**: Design agents that research specific topics
+- **Data Analysis**: Create agents that analyze and visualize data
+- **Customer Support**: Design agents that handle customer inquiries
+
 ## API Keys
 
 To use multiple model providers, you need to set up API keys in a `.env` file:
