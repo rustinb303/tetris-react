@@ -79,13 +79,14 @@ def run_data_integration_demo(topic="AI trends"):
         Research {topic} thoroughly and store your findings in the database.
         
         Use the research_db tool to store your findings with the following structure:
-        - Insert data with 'insert' operation
-        - Data should have 'topic', 'subtopic', 'content', and 'source' fields
         
-        For example:
-        ```python
-        research_db.insert({{"topic": "{topic}", "subtopic": "History", "content": "Content about history...", "source": "Source URL or reference"}})
         ```
+        Action: SupabaseTool
+        Action Input: {{"operation": "insert", "data": {{"topic": "{topic}", "subtopic": "History", "content": "Content about history...", "source": "Source URL or reference"}}}}
+        ```
+        
+        IMPORTANT: Always specify "operation" as the first parameter with values like "insert", "select", "update", or "delete".
+        For insert operations, include a "data" parameter with the content to store.
         
         Store at least 3 different subtopics with detailed information.
         """,
@@ -99,9 +100,12 @@ def run_data_integration_demo(topic="AI trends"):
         Retrieve the research data about {topic} from the database and analyze it to provide insights.
         
         Use the research_db tool to retrieve the data:
-        ```python
-        data = research_db.select(filters={{"topic": "{topic}"}})
         ```
+        Action: SupabaseTool
+        Action Input: {{"operation": "select", "filters": {{"topic": "{topic}"}}}}
+        ```
+        
+        IMPORTANT: Always specify "operation" as the first parameter with values like "select", "insert", "update", or "delete".
         
         Analyze the data and provide:
         1. A summary of the key findings
