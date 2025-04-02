@@ -1,7 +1,9 @@
 """Tool registry for the CrewAI multi-agent system."""
-from typing import Dict, List, Optional, Callable, Any
+from typing import Dict, List, Optional, Callable, Any, Union
 
 from crewai.tools.base_tool import BaseTool as Tool
+from .database_tools import SupabaseTool
+from .spreadsheet_tools import GoogleSheetsTool
 
 
 class ToolRegistry:
