@@ -25,10 +25,10 @@ class SupabaseTool(BaseTool):
             url: The Supabase URL (defaults to SUPABASE_URL env var)
             key: The Supabase key (defaults to SUPABASE_KEY env var)
         """
-        super().__init__()
-        self.table_name = table_name
-        self.url = url or os.getenv("SUPABASE_URL")
-        self.key = key or os.getenv("SUPABASE_KEY") or get_api_key("supabase")
+        url_value = url or os.getenv("SUPABASE_URL")
+        key_value = key or os.getenv("SUPABASE_KEY") or get_api_key("supabase")
+        
+        super().__init__(table_name=table_name, url=url_value, key=key_value)
         
         if not self.url or not self.key:
             raise ValueError("Supabase URL and key must be provided or set in environment variables")
