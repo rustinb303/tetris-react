@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta-Agent System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+        .message-container {
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+        .user-message {
+            background-color: #e2f5fe;
+            border-radius: 18px 18px 0 18px;
+        }
+        .agent-message {
+            background-color: #f0f0f0;
+            border-radius: 18px 18px 18px 0;
+        }
+        .typing-indicator {
+            display: inline-block;
+        }
+        .typing-indicator span {
+            height: 10px;
+            width: 10px;
+            float: left;
+            margin: 0 1px;
+            background-color: #9E9E9E;
+            display: block;
+            border-radius: 50%;
+            opacity: 0.4;
+        }
+        .typing-indicator span:nth-of-type(1) {
+            animation: 1s blink infinite 0.3333s;
+        }
+        .typing-indicator span:nth-of-type(2) {
+            animation: 1s blink infinite 0.6666s;
+        }
+        .typing-indicator span:nth-of-type(3) {
+            animation: 1s blink infinite 0.9999s;
+        }
+        @keyframes blink {
+            50% {
+                opacity: 1;
+            }
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 20px;
+            border-radius: 10px;
+            background-color: #4CAF50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Meta-Agent System</h1>
+        
+        <div id="start-form" class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Create a New Agent System</h2>
+            <div class="mb-4">
+                <label for="task-description" class="block text-gray-700 mb-2">What kind of agent system would you like to create?</label>
+                <textarea id="task-description" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="e.g., Create agents for jailbreak detection"></textarea>
+            </div>
+            <button id="start-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">Start Conversation</button>
+        </div>
+        
+        <div id="chat-interface" class="hidden">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3">
+                        MA
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold" id="chat-title">Meta-Agent System</h2>
+                        <p class="text-gray-600 text-sm" id="chat-subtitle">Creating your custom agent system</p>
+                    </div>
+                </div>
+                
+                <div id="progress-section" class="mb-4">
+                    <h3 class="text-lg font-medium mb-2">Progress</h3>
+                    <div class="progress-container">
+                        <div id="progress-bar" class="progress-bar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-600 mt-1">
+                        <span>Interview</span>
+                        <span>Design</span>
+                        <span>Code</span>
+                        <span>Evaluate</span>
+                        <span>Complete</span>
+                    </div>
+                </div>
+                
+                <div class="message-container p-4 border rounded-lg mb-4" id="message-container">
+                    <!-- Messages will be added here -->
+                    <div class="flex justify-center items-center h-full text-gray-500">
+                        <p>Starting conversation...</p>
+                    </div>
+                </div>
+                
+                <div class="flex">
+                    <input type="text" id="message-input" class="flex-grow px-3 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your message...">
+                    <button id="send-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-r-lg transition duration-300">Send</button>
+                </div>
+            </div>
+            
+            <div id="files-section" class="hidden bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">Generated Files</h3>
+                <div id="files-list" class="space-y-2">
+                    <!-- Generated files will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Socket.io connection
+        const socket = io();
+        let currentSessionId = null;
+        
+        // DOM elements
+        const startForm = document.getElementById('start-form');
+        const chatInterface = document.getElementById('chat-interface');
+        const messageContainer = document.getElementById('message-container');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const startBtn = document.getElementById('start-btn');
+        const taskDescription = document.getElementById('task-description');
+        const chatTitle = document.getElementById('chat-title');
+        const chatSubtitle = document.getElementById('chat-subtitle');
+        const progressBar = document.getElementById('progress-bar');
+        const filesSection = document.getElementById('files-section');
+        const filesList = document.getElementById('files-list');
+        
+        // Progress stages and their percentage values
+        const stages = {
+            'interview': 20,
+            'design': 40,
+            'code': 60,
+            'evaluate': 80,
+            'complete': 100
+        };
+        
+        // Socket.io event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+        
+        socket.on('connected', (data) => {
+            console.log('Connection confirmed:', data);
+        });
+        
+        socket.on('session_joined', (data) => {
+            console.log('Joined session:', data);
+            
+            // Clear existing messages
+            messageContainer.innerHTML = '';
+            
+            // Add messages from history
+            data.messages.forEach(message => {
+                addMessage(message.role, message.content);
+            });
+            
+            // Scroll to bottom
+            scrollToBottom();
+        });
+        
+        socket.on('agent_message', (data) => {
+            if (data.session_id === currentSessionId) {
+                addMessage('agent', data.message.content);
+                scrollToBottom();
+            }
+        });
+        
+        socket.on('user_message_received', (data) => {
+            console.log('User message received:', data);
+        });
+        
+        socket.on('status_update', (data) => {
+            if (data.session_id === currentSessionId) {
+                updateProgress(data.stage);
+                chatSubtitle.textContent = data.message;
+            }
+        });
+        
+        socket.on('process_complete', (data) => {
+            if (data.session_id === currentSessionId) {
+                updateProgress('complete');
+                chatSubtitle.textContent = 'Agent system created successfully!';
+                
+                // Show files section
+                filesSection.classList.remove('hidden');
+                
+                // Add files to the list
+                filesList.innerHTML = `
+                    <div class="p-3 bg-gray-100 rounded-lg">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span class="font-medium">${data.output_filename}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 ml-7">Main agent system implementation</p>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <span class="font-medium">${data.script_name}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 ml-7">Run script for easy execution</p>
+                    </div>
+                `;
+            }
+        });
+        
+        socket.on('error', (data) => {
+            console.error('Error:', data);
+            addSystemMessage('error', `Error: ${data.error}`);
+        });
+        
+        // Event listeners
+        startBtn.addEventListener('click', () => {
+            const description = taskDescription.value.trim();
+            if (description) {
+                startSession(description);
+            } else {
+                alert('Please enter a task description');
+            }
+        });
+        
+        sendBtn.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Functions
+        function startSession(description) {
+            fetch('/api/sessions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    task_description: description
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                currentSessionId = data.session_id;
+                
+                // Update UI
+                startForm.classList.add('hidden');
+                chatInterface.classList.remove('hidden');
+                chatTitle.textContent = 'Meta-Agent System';
+                chatSubtitle.textContent = `Creating: ${description}`;
+                
+                // Join the session
+                socket.emit('join_session', {
+                    session_id: currentSessionId
+                });
+                
+                // Reset progress
+                updateProgress('interview');
+            })
+            .catch(error => {
+                console.error('Error starting session:', error);
+                alert('Error starting session. Please try again.');
+            });
+        }
+        
+        function sendMessage() {
+            const content = messageInput.value.trim();
+            if (content && currentSessionId) {
+                // Add message to UI
+                addMessage('user', content);
+                
+                // Send message to server
+                socket.emit('user_message', {
+                    session_id: currentSessionId,
+                    content: content
+                });
+                
+                // Clear input
+                messageInput.value = '';
+                
+                // Scroll to bottom
+                scrollToBottom();
+            }
+        }
+        
+        function addMessage(role, content) {
+            // Remove loading indicator if exists
+            const loadingIndicator = messageContainer.querySelector('.typing-indicator-container');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
+            
+            // Clear placeholder if it exists
+            if (messageContainer.querySelector('div.flex.justify-center')) {
+                messageContainer.innerHTML = '';
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${role}-message p-3 my-2 max-w-3/4 ${role === 'user' ? 'ml-auto' : ''}`;
+            
+            // Format code blocks
+            let formattedContent = content.replace(/```([\s\S]*?)```/g, (match, code) => {
+                return `<pre class="bg-gray-800 text-white p-3 rounded-md my-2 overflow-x-auto">${code}</pre>`;
+            });
+            
+            // Add line breaks
+            formattedContent = formattedContent.replace(/\n/g, '<br>');
+            
+            messageDiv.innerHTML = formattedContent;
+            messageContainer.appendChild(messageDiv);
+        }
+        
+        function addSystemMessage(type, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `system-message p-3 my-2 text-center ${type === 'error' ? 'text-red-500' : 'text-gray-500'}`;
+            messageDiv.textContent = message;
+            messageContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        function scrollToBottom() {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+        
+        function updateProgress(stage) {
+            const percentage = stages[stage] || 0;
+            progressBar.style.width = `${percentage}%`;
+            progressBar.textContent = `${percentage}%`;
+            
+            // Highlight current stage
+            const stageElements = document.querySelectorAll('.progress-container + div span');
+            const stageIndex = Object.keys(stages).indexOf(stage);
+            
+            stageElements.forEach((el, index) => {
+                if (index <= stageIndex) {
+                    el.classList.add('font-semibold', 'text-blue-600');
+                } else {
+                    el.classList.remove('font-semibold', 'text-blue-600');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
