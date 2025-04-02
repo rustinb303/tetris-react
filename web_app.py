@@ -143,7 +143,8 @@ class MetaAgentSession:
                 socketio.emit('process_complete', {
                     'session_id': self.session_id,
                     'output_filename': output_filename,
-                    'script_name': script_name
+                    'script_name': script_name,
+                    'code_content': self.code_results
                 })
             else:
                 self.send_agent_message(
@@ -156,7 +157,8 @@ class MetaAgentSession:
                     'session_id': self.session_id,
                     'output_filename': output_filename,
                     'evaluation_results': self.evaluation_results,
-                    'needs_revision': True
+                    'needs_revision': True,
+                    'code_content': self.code_results
                 })
             
         except Exception as e:

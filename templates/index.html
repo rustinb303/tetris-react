@@ -127,6 +127,10 @@
                 <div id="files-list" class="space-y-2">
                     <!-- Generated files will be listed here -->
                 </div>
+                <div id="code-display" class="mt-6 hidden">
+                    <h3 class="text-lg font-semibold mb-2">Generated Code</h3>
+                    <pre id="code-content" class="bg-gray-800 text-white p-4 rounded-md overflow-x-auto max-h-96 overflow-y-auto"></pre>
+                </div>
             </div>
         </div>
     </div>
@@ -234,6 +238,15 @@
                         <p class="text-sm text-gray-600 ml-7">Run script for easy execution</p>
                     </div>
                 `;
+                
+                // Display the code if available
+                if (data.code_content) {
+                    const codeDisplay = document.getElementById('code-display');
+                    const codeContent = document.getElementById('code-content');
+                    
+                    codeDisplay.classList.remove('hidden');
+                    codeContent.textContent = data.code_content;
+                }
             }
         });
         
