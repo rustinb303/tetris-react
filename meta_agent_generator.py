@@ -193,9 +193,10 @@ class MetaAgentGenerator:
         result = interview_task.execute_sync()
         
         try:
-            json_start = result.find('{')
-            json_end = result.rfind('}') + 1
-            json_str = result[json_start:json_end]
+            result_str = result.raw
+            json_start = result_str.find('{')
+            json_end = result_str.rfind('}') + 1
+            json_str = result_str[json_start:json_end]
             requirements = json.loads(json_str)
         except (json.JSONDecodeError, ValueError) as e:
             print(f"Error parsing requirements: {e}")
@@ -265,9 +266,10 @@ class MetaAgentGenerator:
         result = design_task.execute_sync()
         
         try:
-            json_start = result.find('{')
-            json_end = result.rfind('}') + 1
-            json_str = result[json_start:json_end]
+            result_str = result.raw
+            json_start = result_str.find('{')
+            json_end = result_str.rfind('}') + 1
+            json_str = result_str[json_start:json_end]
             design = json.loads(json_str)
         except (json.JSONDecodeError, ValueError) as e:
             print(f"Error parsing design: {e}")
@@ -361,16 +363,17 @@ class MetaAgentGenerator:
         
         result = code_task.execute_sync()
         
-        if "```python" in result:
-            code_start = result.find("```python") + 10
-            code_end = result.rfind("```")
-            code = result[code_start:code_end].strip()
-        elif "```" in result:
-            code_start = result.find("```") + 3
-            code_end = result.rfind("```")
-            code = result[code_start:code_end].strip()
+        result_str = result.raw
+        if "```python" in result_str:
+            code_start = result_str.find("```python") + 10
+            code_end = result_str.rfind("```")
+            code = result_str[code_start:code_end].strip()
+        elif "```" in result_str:
+            code_start = result_str.find("```") + 3
+            code_end = result_str.rfind("```")
+            code = result_str[code_start:code_end].strip()
         else:
-            code = result.strip()
+            code = result_str.strip()
         
         self.generated_code = code
         return code
@@ -424,7 +427,8 @@ class MetaAgentGenerator:
         
         result = evaluation_task.execute_sync()
         
-        is_approved = "APPROVED" in result.upper() and "NEEDS REVISION" not in result
+        result_str = result.raw
+        is_approved = "APPROVED" in result_str.upper() and "NEEDS REVISION" not in result_str
         
         return is_approved, result
     
