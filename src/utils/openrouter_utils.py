@@ -26,9 +26,9 @@ def get_openrouter_llm(model: str, temperature: float = 0.7) -> BaseChatModel:
         temperature=temperature,
         openai_api_key=openrouter_api_key,
         openai_api_base="https://openrouter.ai/api/v1",
-        headers={
-            "HTTP-Referer": "https://github.com/mattxlarson/crewai-multi-agent",  # Replace with your site URL
-            "X-Title": "CrewAI Multi-Agent Project"  # Replace with your app name
+        default_headers={
+            "HTTP-Referer": "https://github.com/mattxlarson/crewai-multi-agent",
+            "X-Title": "CrewAI Multi-Agent Project"
         }
     )
 
@@ -52,11 +52,21 @@ def get_openrouter_model_name(provider: str, model: str) -> str:
     elif provider == "gemini":
         if model.startswith("google/"):
             model = model[7:]
-        return f"google/{model}"
+            
+        gemini_mapping = {
+            "gemini-2.0-flash": "gemini-pro",
+            "gemini-2.0-pro": "gemini-pro",
+            "gemini-1.5-pro": "gemini-pro"
+        }
+        
+        if model in gemini_mapping:
+            model = gemini_mapping[model]
+            
+        return f"anthropic/claude-3-sonnet-20240229"  # Fallback to Claude as Google models may not be available
     elif provider == "grok":
-        return f"xai/{model}"
+        return f"anthropic/claude-3-sonnet-20240229"
     else:
-        return f"openai/{model}"
+        return f"openai/gpt-4o-mini"
 
 OPENROUTER_MODELS = {
     "openai": [

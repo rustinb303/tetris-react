@@ -58,7 +58,7 @@ def get_llm(provider: str, model: str):
             except Exception as e:
                 print(f"Error initializing Anthropic model: {e}")
                 print("Falling back to OpenAI model...")
-                return ChatOpenAI(model="gpt-4o", temperature=0.7)
+                return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
         elif provider.lower() == "gemini":
             try:
                 if not model.startswith("google/") and model.startswith("gemini-"):
@@ -68,14 +68,14 @@ def get_llm(provider: str, model: str):
             except Exception as e:
                 print(f"Error initializing Gemini model: {e}")
                 print("Falling back to OpenAI model...")
-                return ChatOpenAI(model="gpt-4o", temperature=0.7)
+                return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
         elif provider.lower() == "grok":
             try:
                 return ChatGroq(model=model, temperature=0.7)
             except Exception as e:
                 print(f"Error initializing Grok model: {e}")
                 print("Falling back to OpenAI model...")
-                return ChatOpenAI(model="gpt-4o", temperature=0.7)
+                return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
         else:
             return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
     except Exception as e:
