@@ -12,6 +12,7 @@ import xai_grok
 from ..config.config import AgentConfig
 from ..utils.env_loader import load_env_vars, get_api_key
 from ..utils.openrouter_utils import get_openrouter_llm, get_openrouter_model_name
+from ..utils.crewai_openrouter import OpenRouterChatModel
 
 
 class BaseAgent:
@@ -44,19 +45,21 @@ class BaseAgent:
         if ":" not in model_config:
             return model_config
         
-        provider, model = model_config.split(":", 1)
-        provider = provider.lower()
-        
         openrouter_api_key = os.environ.get("OPENROUTER_API_KEY")
         
         if openrouter_api_key:
             try:
-                print(f"Using OpenRouter for {provider}/{model}")
-                openrouter_model = get_openrouter_model_name(provider, model)
-                return get_openrouter_llm(openrouter_model, self.config.temperature)
+                print(f"Using OpenRouter for {model_config}")
+                return OpenRouterChatModel(
+                    model=model_config,
+                    temperature=self.config.temperature
+                )
             except Exception as e:
                 print(f"Error initializing OpenRouter LLM: {e}")
                 print("Falling back to direct provider API...")
+        
+        provider, model = model_config.split(":", 1)
+        provider = provider.lower()
         
         if provider == "openai":
             return ChatOpenAI(
