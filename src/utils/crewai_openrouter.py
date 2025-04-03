@@ -21,7 +21,7 @@ class OpenRouterChatModel(BaseChatModel):
     
     def __init__(
         self,
-        model: str = "openai:gpt-4o-mini",
+        model: str = "openrouter/openai/gpt-4o-mini",
         temperature: float = 0.7,
         **kwargs
     ):
@@ -51,9 +51,13 @@ class OpenRouterChatModel(BaseChatModel):
         
         if ":" in model:
             provider, model_name = model.split(":", 1)
-            self.model_name = get_openrouter_model_name(provider, model_name)
+        elif "/" in model:
+            provider, model_name = model.split("/", 1)
         else:
-            self.model_name = model
+            provider = "openai"
+            model_name = model
+            
+        self.model_name = get_openrouter_model_name(provider, model_name)
         
         self.temperature = temperature
     

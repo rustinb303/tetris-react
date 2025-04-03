@@ -145,6 +145,16 @@ def run_detailed_reporting_demo(topic="AI trends"):
 
 
 if __name__ == "__main__":
-    topic = sys.argv[1] if len(sys.argv) > 1 else "AI trends"
+    import argparse
     
-    run_detailed_reporting_demo(topic)
+    parser = argparse.ArgumentParser(description="Run a demo with detailed agent activity reporting")
+    parser.add_argument("topic", nargs="?", default="AI trends", help="Topic to research and analyze")
+    parser.add_argument("--dry-run", action="store_true", help="Run in dry-run mode (no API calls)")
+    args = parser.parse_args()
+    
+    if args.dry_run:
+        print(f"Dry run mode: Would research and analyze '{args.topic}' with detailed reporting")
+        print("This would log agent activities to console, file, and optionally Supabase")
+        print("To run with actual API calls, remove the --dry-run flag")
+    else:
+        run_detailed_reporting_demo(args.topic)
