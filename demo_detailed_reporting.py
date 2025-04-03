@@ -153,8 +153,29 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.dry_run:
-        print(f"Dry run mode: Would research and analyze '{args.topic}' with detailed reporting")
+        print(f"\nDry run mode: Would research and analyze '{args.topic}' with detailed reporting")
         print("This would log agent activities to console, file, and optionally Supabase")
-        print("To run with actual API calls, remove the --dry-run flag")
+        
+        logs_dir = Path("./agent_logs")
+        logs_dir.mkdir(exist_ok=True)
+        
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
+        
+        use_db = bool(supabase_url and supabase_key)
+        
+        print("\nLogging configuration:")
+        print(f"- Log to console: Yes")
+        print(f"- Log to file: Yes (directory: {logs_dir})")
+        print(f"- Log to database: {'Yes' if use_db else 'No'}")
+        if use_db:
+            print(f"  - Supabase URL: {supabase_url}")
+            print(f"  - Table name: agent_activities")
+        
+        print("\nAgent configuration:")
+        print("- Researcher: Using model openai:gpt-4o-mini")
+        print("- Analyst: Using model openai:gpt-4o-mini")
+        
+        print("\nTo run with actual API calls, remove the --dry-run flag")
     else:
         run_detailed_reporting_demo(args.topic)
