@@ -18,6 +18,7 @@ from src.agents.agent_factory import AgentFactory
 from src.tasks.task_factory import TaskFactory
 from src.models.crew_manager import CrewManager
 from src.utils.env_loader import load_env_vars
+from src.utils.openrouter_utils import get_openrouter_llm, get_openrouter_model_name
 
 
 def get_llm(provider: str, model: str):
@@ -32,6 +33,19 @@ def get_llm(provider: str, model: str):
         A language model instance
     """
     load_env_vars()
+    
+    openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+    
+    if openrouter_api_key:
+        try:
+            openrouter_model = get_openrouter_model_name(provider, model)
+            print(f"Using OpenRouter with model: {openrouter_model}")
+            return get_openrouter_llm(openrouter_model)
+        except Exception as e:
+            print(f"Error initializing OpenRouter LLM: {e}")
+            print("Falling back to direct provider API...")
+    else:
+        print("OpenRouter API key not found. Using direct provider APIs.")
     
     try:
         if provider.lower() == "openai":
