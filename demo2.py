@@ -154,16 +154,19 @@ def run_poetry_demo(theme="nature"):
     return refinement_result
 
 if __name__ == "__main__":
-    required_keys = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "GROK_API_KEY"]
-    missing_keys = [key for key in required_keys if not os.environ.get(key)]
-    
-    if missing_keys:
-        print("Error: The following API keys are missing:")
-        for key in missing_keys:
-            print(f"  - {key}")
-        print("\nPlease set these keys in your .env file or environment variables.")
-        print("See .env.example for the required format.")
-        sys.exit(1)
+    if os.environ.get("OPENROUTER_API_KEY"):
+        print("Using OpenRouter for all model providers")
+    else:
+        required_keys = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "GROK_API_KEY"]
+        missing_keys = [key for key in required_keys if not os.environ.get(key)]
+        
+        if missing_keys:
+            print("Error: OpenRouter API key is missing and the following direct API keys are missing:")
+            for key in missing_keys:
+                print(f"  - {key}")
+            print("\nPlease set either OPENROUTER_API_KEY or all individual API keys in your .env file.")
+            print("See .env.example for the required format.")
+            sys.exit(1)
     
     theme = sys.argv[1] if len(sys.argv) > 1 else "nature"
     
