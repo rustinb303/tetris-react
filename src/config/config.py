@@ -1,5 +1,5 @@
 """Configuration module for the CrewAI multi-agent system."""
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 from pydantic import BaseModel, Field
 
 
@@ -50,4 +50,4 @@ class CrewConfig(BaseModel):
     verbose: bool = True
     memory: bool = True
     cache: bool = False
-    step_callback: bool = False
+    step_callback: Any = False
