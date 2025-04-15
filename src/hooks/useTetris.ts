@@ -1,40 +1,68 @@
-import    {useCallback, useEffect, useState } from 'react';
-import      {Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
-import {  useInterval } from './useInterval';
-import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock,} from './useTetrisBoard';
+import { useCallback, useEffect, useState } from 'react';
+import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
+import { useInterval } from './useInterval';
+import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock } from './useTetrisBoard';
 
-const max_High_scores = 10;
+const maxHighScores = 10;
 
-// Function... seems self explanatory to me 
+/**
+ * Saves a new score to the high scores list in local storage.
+ * Keeps the list sorted and limits it to the top `maxHighScores`.
+ * @param score The score to save.
+ */
 export function saveHighScore(score: number): void {
   const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
   const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, max_High_scores);
+    .slice(0, maxHighScores);
     localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
-// Function... also self explanatory 
+/**
+ * Retrieves the list of high scores from local storage.
+ * Returns a sorted array of scores, limited to `maxHighScores`.
+ * Returns an empty array if no scores are found or if there's an error parsing the data.
+ * @returns An array of numbers representing the high scores.
+ */
 export function GetHighScores(): number[] {
       try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
+    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, maxHighScores) : [];
   } catch {return [];
   }
 }
 
-// this does something with the board, but I'm not sure what
+/**
+ * Represents the speed at which the game ticks, determining how fast blocks fall.
+ * - Normal: The standard falling speed.
+ * - Sliding: A brief period after a block hits the stack, allowing the player to slide it horizontally.
+ * - Fast: Increased speed when the player holds the 'down' arrow key.
+ */
 enum TickSpeed {
   Normal = 800,
   Sliding = 100,
   Fast = 50,
 }
 
-// main function. todo: add comments
+/**
+ * Custom hook to manage the core logic and state of the Tetris game.
+ *
+ * Returns the game board, player score, upcoming blocks, high scores,
+ * and functions to control the game (e.g., startGame).
+ * Handles game ticks, block movements, rotations, line clearing, scoring,
+ * and game over conditions.
+ *
+ * @returns An object containing the game state and control functions.
+ */
 export function useTetris() {
+  // Player's current score
   const [score, setScore] = useState(0);
+  // Queue of the next blocks to be dropped
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
+  // Flag indicating if the current block is in the 'sliding' phase before committing
   const [isCommitting, setIsCommitting] = useState(false);
+  // Flag indicating if the game is currently active
   const [isPlaying, setIsPlaying] = useState(false);
+  // Current speed of the game ticks (null if game not running)
   const [tickSpeed, setTickSpeed] = useState<TickSpeed | null>(null);
 
   const [
@@ -42,6 +70,7 @@ export function useTetris() {
     dispatchBoardState,
   ] = useTetrisBoard();
 
+  // Starts a new game, resetting the board, score, and upcoming blocks.
   const startGame = useCallback(() => {
     const startingBlocks = [
       getRandomBlock(),
@@ -56,6 +85,9 @@ export function useTetris() {
     dispatchBoardState({ type: 'start' });
   }, [dispatchBoardState]);
 
+  // Commits the current dropping block to the board.
+  // Handles line clearing, score updates, generates the next block,
+  // and checks for game over conditions.
   const commitPosition = useCallback(() => {
     if (!hasCollisions(board, droppingShape, droppingRow + 1, droppingColumn)) {
       setIsCommitting(false);
@@ -110,6 +142,9 @@ export function useTetris() {
     score,
   ]);
 
+  // Represents a single tick of the game loop.
+  // Handles dropping the current block, checking for collisions,
+  // and triggering the commit phase when a block lands.
   const gameTick = useCallback(() => {
     if (isCommitting) {
       commitPosition();
@@ -138,6 +173,8 @@ export function useTetris() {
     gameTick();
   }, tickSpeed);
 
+  // Effect hook to handle keyboard input for controlling the game.
+  // Listens for keydown and keyup events to move, rotate, and speed up the dropping block.
   useEffect(() => {
     if (!isPlaying) {
       return;
@@ -163,6 +200,7 @@ export function useTetris() {
       }, 300);
     };
 
+    // Handles key press events (ArrowDown, ArrowUp, ArrowLeft, ArrowRight).
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) {
         return;
@@ -190,6 +228,7 @@ export function useTetris() {
       }
     };
 
+     // Handles key release events (ArrowDown, ArrowLeft, ArrowRight).
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.key === 'ArrowDown') {
         setTickSpeed(TickSpeed.Normal);
@@ -208,6 +247,7 @@ export function useTetris() {
 
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
+    // Cleanup function: remove event listeners and clear intervals when the component unmounts or isPlaying changes.
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
