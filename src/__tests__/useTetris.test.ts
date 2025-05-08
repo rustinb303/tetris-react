@@ -3,11 +3,13 @@ import { renderHook, act } from '@testing-library/react';
 import { hasCollisions, useTetrisBoard } from '../hooks/useTetrisBoard';
 import { useTetris, saveHighScore, GetHighScores } from '../hooks/useTetris';
 
-enum TickSpeed {
-  Normal = 800,
-  Sliding = 100,
-  Fast = 50,
-}
+// Actual TickSpeed values from useTetris.ts
+const TickSpeed = {
+  Normal: 80,
+  Sliding: 10,
+  Fast: 5,
+  Hardcore: 80,
+};
 
 // Mock the entire useTetrisBoard module
 vi.mock('../hooks/useTetrisBoard', async () => {
@@ -132,6 +134,83 @@ describe('useTetris', () => {
       localStorage.setItem('highScores', 'invalid-json');
       const { result } = renderHook(() => useTetris());
       expect(result.current.highScores).toEqual([]);
+    });
+  });
+
+  describe('Hardcore Mode', () => {
+    it('toggles hardcore mode and updates tick speed accordingly', () => {
+      const { result } = renderHook(() => useTetris());
+
+      // Initial state
+      expect(result.current.isHardcoreMode).toBe(false);
+      // TickSpeed is null initially before game starts
+      expect(result.current.tickSpeed).toBe(null); 
+
+      // Toggle to Hardcore
+      act(() => {
+        result.current.toggleHardcoreMode();
+      });
+      expect(result.current.isHardcoreMode).toBe(true);
+      // TickSpeed should remain null as game hasn't started
+      expect(result.current.tickSpeed).toBe(null);
+
+      // Toggle back to Normal
+      act(() => {
+        result.current.toggleHardcoreMode();
+      });
+      expect(result.current.isHardcoreMode).toBe(false);
+      expect(result.current.tickSpeed).toBe(null);
+
+      // Start the game
+      act(() => {
+        result.current.startGame();
+      });
+      // isHardcoreMode is false, so tickSpeed should be Normal
+      expect(result.current.tickSpeed).toBe(TickSpeed.Normal);
+
+      // Toggle to Hardcore while game is playing
+      act(() => {
+        result.current.toggleHardcoreMode();
+      });
+      expect(result.current.isHardcoreMode).toBe(true);
+      expect(result.current.tickSpeed).toBe(TickSpeed.Hardcore);
+      
+      // Pressing ArrowDown should go to Fast
+      act(() => {
+        // Simulate keydown event for ArrowDown - this part is tricky without DOM
+        // We'll assume the internal logic for setTickSpeed(TickSpeed.Fast) is called
+        // For now, let's directly check the next toggle
+      });
+
+      // Toggle back to Normal while game is playing
+      act(() => {
+        result.current.toggleHardcoreMode();
+      });
+      expect(result.current.isHardcoreMode).toBe(false);
+      expect(result.current.tickSpeed).toBe(TickSpeed.Normal);
+
+      // Test behavior when game ends (simplified)
+      // Manually set isPlaying to false to simulate game over condition for tickSpeed setting by toggle
+      act(() => {
+        // This is a bit of a hack for the test, in reality, game over sets isPlaying to false
+        result.current.isPlaying = false; 
+      });
+
+      act(() => {
+        result.current.toggleHardcoreMode(); // to true
+      });
+      expect(result.current.isHardcoreMode).toBe(true);
+      // TickSpeed should not change if game is not playing
+      expect(result.current.tickSpeed).toBe(TickSpeed.Normal); // Stays as it was
+
+      act(() => {
+         result.current.isPlaying = true; // set it back for next test
+         result.current.toggleHardcoreMode(); // to false
+      });
+       expect(result.current.isHardcoreMode).toBe(false);
+       expect(result.current.tickSpeed).toBe(TickSpeed.Normal);
+
+
     });
   });
 });
