@@ -251,6 +251,35 @@ button:active {
   text-align: center;
 }
 
+.keyboard-commands {
+  width: 160px; /* To match high-scores width */
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  color: white;
+}
+
+.keyboard-commands h2 {
+  color: white;
+  margin-top: 0;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.keyboard-commands ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.keyboard-commands li {
+  padding: 4px 0;
+  font-size: 0.9rem; /* Slightly smaller for list items */
+  text-align: left; /* Align command text to the left */
+}
+
 .high-scores p {
   color: white;
   text-align: center;

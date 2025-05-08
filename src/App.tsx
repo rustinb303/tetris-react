@@ -1,6 +1,7 @@
 import Board from './components/Board';
 import UpcomingBlocks from './components/UpcomingBlocks';
 import HighScores from './components/HighScores';
+import KeyboardCommands from './components/KeyboardCommands';
 import { useTetris } from './hooks/useTetris';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
           <>
             <button onClick={startGame}>New Game</button>
             <HighScores />
+            <KeyboardCommands />
           </>
         )}
       </div>
