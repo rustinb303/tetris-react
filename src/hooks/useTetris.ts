@@ -24,10 +24,12 @@ export function GetHighScores(): number[] {
 
 // this does something with the board, but I'm not sure what
 enum TickSpeed {
-  Normal = 80,
-  Sliding = 10,
-  Fast = 5,
-  Hardcore = 80,
+  Normal = 800,
+  Sliding = 100,
+  Fast = 50,
+  HardcoreNormal = 80,
+  HardcoreSliding = 10,
+  HardcoreFast = 5,
 }
 
 // main function. todo: add comments
@@ -54,14 +56,14 @@ export function useTetris() {
     setUpcomingBlocks(startingBlocks);
     setIsCommitting(false);
     setIsPlaying(true);
-    setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
+    setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
     dispatchBoardState({ type: 'start' });
   }, [dispatchBoardState, isHardcoreMode]);
 
   const commitPosition = useCallback(() => {
     if (!hasCollisions(board, droppingShape, droppingRow + 1, droppingColumn)) {
       setIsCommitting(false);
-      setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
+      setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
       return;
     }
 
@@ -91,7 +93,7 @@ export function useTetris() {
       setIsPlaying(false);
       setTickSpeed(null);
     } else {
-      setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
+      setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
     }
     setUpcomingBlocks(newUpcomingBlocks);
     setScore((prevScore) => prevScore + getPoints(numCleared));
@@ -119,7 +121,7 @@ export function useTetris() {
     } else if (
       hasCollisions(board, droppingShape, droppingRow + 1, droppingColumn)
     ) {
-      setTickSpeed(TickSpeed.Sliding);
+      setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreSliding : TickSpeed.Sliding);
       setIsCommitting(true);
     } else {
       dispatchBoardState({ type: 'drop' });
@@ -132,6 +134,7 @@ export function useTetris() {
     droppingRow,
     droppingShape,
     isCommitting,
+    isHardcoreMode,
   ]);
 
   useInterval(() => {
@@ -172,7 +175,7 @@ export function useTetris() {
       }
 
       if (event.key === 'ArrowDown') {
-        setTickSpeed(TickSpeed.Fast);
+        setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreFast : TickSpeed.Fast);
       }
 
       if (event.key === 'ArrowUp') {
@@ -195,7 +198,7 @@ export function useTetris() {
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.key === 'ArrowDown') {
-        setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
+        setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
       }
 
       if (event.key === 'ArrowLeft') {
@@ -215,7 +218,7 @@ export function useTetris() {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
       clearInterval(moveIntervalID);
-      setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
+      setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
     };
   }, [dispatchBoardState, isPlaying, isHardcoreMode]);
 
@@ -223,7 +226,7 @@ export function useTetris() {
     setIsHardcoreMode(prev => {
       const newIsHardcore = !prev;
       if (isPlaying) {
-        setTickSpeed(newIsHardcore ? TickSpeed.Hardcore : TickSpeed.Normal);
+        setTickSpeed(newIsHardcore ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
       }
       return newIsHardcore;
     });
