@@ -251,6 +251,30 @@ button:active {
   text-align: center;
 }
 
+.keyboard-commands {
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  color: white;
+}
+
+.keyboard-commands h3 {
+  color: white;
+  margin-top: 0;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 1.2rem; /* Adjusted for a sub-heading */
+}
+
+.keyboard-commands p {
+  color: white;
+  text-align: left; /* Align command text to the left for readability */
+  margin: 8px 0; /* Add some spacing between commands */
+  opacity: 0.9; /* Slightly less prominent than the heading */
+}
+
 .high-scores p {
   color: white;
   text-align: center;
@@ -269,28 +293,4 @@ button:active {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 4px;
   text-align: center;
-}
-
-.keyboard-commands {
-  margin-top: 20px;
-  padding: 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #f9f9f9;
-}
-
-.keyboard-commands h2 {
-  margin-top: 0;
-  font-size: 1.2em;
-  color: black; /* Assuming black text for the light background */
-}
-
-.keyboard-commands ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.keyboard-commands li {
-  margin-bottom: 5px;
-  color: black; /* Assuming black text for the light background */
 }

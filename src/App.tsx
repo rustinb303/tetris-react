@@ -2,7 +2,6 @@ import Board from './components/Board';
 import UpcomingBlocks from './components/UpcomingBlocks';
 import HighScores from './components/HighScores';
 import { useTetris } from './hooks/useTetris';
-import KeyboardCommands from './components/KeyboardCommands';
 
 function App() {
   const { board, startGame, isPlaying, score, upcomingBlocks } = useTetris();
@@ -21,7 +20,13 @@ function App() {
             <HighScores />
           </>
         )}
-        <KeyboardCommands />
+        <div className="keyboard-commands">
+          <h3>Keyboard Commands:</h3>
+          <p>ArrowUp: Rotate block</p>
+          <p>ArrowDown: Speed up block</p>
+          <p>ArrowLeft: Move block left</p>
+          <p>ArrowRight: Move block right</p>
+        </div>
       </div>
     </div>
   );
