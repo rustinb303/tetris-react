@@ -93,17 +93,27 @@ describe('App', () => {
       expect(screen.getByRole('button', { name: /disable hardcore/i })).toBeInTheDocument();
     });
 
-    it('does not render Hardcore button when game is playing', () => {
+    it('renders "Enable Hardcore" button when game is playing and hardcore is disabled', () => {
       mockUseTetris.mockReturnValue({
         ...defaultMockValues,
         isPlaying: true,
+        isHardcoreMode: false,
       });
       render(<App />);
-      expect(screen.queryByRole('button', { name: /enable hardcore/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /disable hardcore/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /enable hardcore/i })).toBeInTheDocument();
     });
 
-    it('calls toggleHardcoreMode when the Hardcore button is clicked', () => {
+    it('renders "Disable Hardcore" button when game is playing and hardcore is enabled', () => {
+      mockUseTetris.mockReturnValue({
+        ...defaultMockValues,
+        isPlaying: true,
+        isHardcoreMode: true,
+      });
+      render(<App />);
+      expect(screen.getByRole('button', { name: /disable hardcore/i })).toBeInTheDocument();
+    });
+
+    it('calls toggleHardcoreMode when the Hardcore button is clicked (game not playing)', () => {
       const mockToggle = vi.fn();
       mockUseTetris.mockReturnValue({
         ...defaultMockValues,
@@ -112,6 +122,21 @@ describe('App', () => {
         toggleHardcoreMode: mockToggle,
       });
       render(<App />);
+      const hardcoreButton = screen.getByRole('button', { name: /enable hardcore/i });
+      fireEvent.click(hardcoreButton);
+      expect(mockToggle).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls toggleHardcoreMode when the Hardcore button is clicked (game playing)', () => {
+      const mockToggle = vi.fn();
+      mockUseTetris.mockReturnValue({
+        ...defaultMockValues,
+        isPlaying: true,
+        isHardcoreMode: false, // State of isHardcoreMode doesn't matter for click itself
+        toggleHardcoreMode: mockToggle,
+      });
+      render(<App />);
+      // Button text will be "Enable Hardcore" due to isHardcoreMode: false
       const hardcoreButton = screen.getByRole('button', { name: /enable hardcore/i });
       fireEvent.click(hardcoreButton);
       expect(mockToggle).toHaveBeenCalledTimes(1);

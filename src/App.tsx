@@ -20,14 +20,14 @@ function App() {
       <Board currentBoard={board} />
       <div className="controls">
         <h2>Score: {score}</h2>
+        <button onClick={toggleHardcoreMode}>
+          {isHardcoreMode ? 'Disable Hardcore' : 'Enable Hardcore'}
+        </button>
         {isPlaying ? (
           <UpcomingBlocks upcomingBlocks={upcomingBlocks} />
         ) : (
           <>
             <button onClick={startGame}>New Game</button>
-            <button onClick={toggleHardcoreMode}>
-              {isHardcoreMode ? 'Disable Hardcore' : 'Enable Hardcore'}
-            </button>
             <HighScores />
           </>
         )}
