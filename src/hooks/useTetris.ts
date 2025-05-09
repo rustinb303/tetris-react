@@ -27,9 +27,7 @@ enum TickSpeed {
   Normal = 800,
   Sliding = 100,
   Fast = 50,
-  HardcoreNormal = 80,
-  HardcoreSliding = 10,
-  HardcoreFast = 5,
+  Hardcore = 40,
 }
 
 // main function. todo: add comments
@@ -38,13 +36,23 @@ export function useTetris() {
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
   const [isCommitting, setIsCommitting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [tickSpeed, setTickSpeed] = useState<TickSpeed | null>(null);
   const [isHardcoreMode, setIsHardcoreMode] = useState(false);
+  const [tickSpeed, setTickSpeed] = useState<TickSpeed | null>(null);
 
   const [
     { board, droppingRow, droppingColumn, droppingBlock, droppingShape },
     dispatchBoardState,
   ] = useTetrisBoard();
+
+  const toggleHardcoreMode = useCallback(() => {
+    setIsHardcoreMode((prevIsHardcore) => {
+      const newIsHardcore = !prevIsHardcore;
+      if (isPlaying) {
+        setTickSpeed(newIsHardcore ? TickSpeed.Hardcore : TickSpeed.Normal);
+      }
+      return newIsHardcore;
+    });
+  }, [isPlaying, setTickSpeed]);
 
   const startGame = useCallback(() => {
     const startingBlocks = [
@@ -56,14 +64,14 @@ export function useTetris() {
     setUpcomingBlocks(startingBlocks);
     setIsCommitting(false);
     setIsPlaying(true);
-    setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
+    setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
     dispatchBoardState({ type: 'start' });
   }, [dispatchBoardState, isHardcoreMode]);
 
   const commitPosition = useCallback(() => {
     if (!hasCollisions(board, droppingShape, droppingRow + 1, droppingColumn)) {
       setIsCommitting(false);
-      setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
+      setTickSpeed(TickSpeed.Normal);
       return;
     }
 
@@ -93,7 +101,7 @@ export function useTetris() {
       setIsPlaying(false);
       setTickSpeed(null);
     } else {
-      setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
+      setTickSpeed(TickSpeed.Normal);
     }
     setUpcomingBlocks(newUpcomingBlocks);
     setScore((prevScore) => prevScore + getPoints(numCleared));
@@ -112,7 +120,6 @@ export function useTetris() {
     droppingShape,
     upcomingBlocks,
     score,
-    isHardcoreMode,
   ]);
 
   const gameTick = useCallback(() => {
@@ -121,7 +128,7 @@ export function useTetris() {
     } else if (
       hasCollisions(board, droppingShape, droppingRow + 1, droppingColumn)
     ) {
-      setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreSliding : TickSpeed.Sliding);
+      setTickSpeed(TickSpeed.Sliding);
       setIsCommitting(true);
     } else {
       dispatchBoardState({ type: 'drop' });
@@ -134,7 +141,6 @@ export function useTetris() {
     droppingRow,
     droppingShape,
     isCommitting,
-    isHardcoreMode,
   ]);
 
   useInterval(() => {
@@ -175,7 +181,7 @@ export function useTetris() {
       }
 
       if (event.key === 'ArrowDown') {
-        setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreFast : TickSpeed.Fast);
+        setTickSpeed(TickSpeed.Fast);
       }
 
       if (event.key === 'ArrowUp') {
@@ -198,7 +204,7 @@ export function useTetris() {
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.key === 'ArrowDown') {
-        setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
+        setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
       }
 
       if (event.key === 'ArrowLeft') {
@@ -218,19 +224,12 @@ export function useTetris() {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
       clearInterval(moveIntervalID);
-      setTickSpeed(isHardcoreMode ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
-    };
-  }, [dispatchBoardState, isPlaying, isHardcoreMode]);
-
-  const toggleHardcoreMode = useCallback(() => {
-    setIsHardcoreMode(prev => {
-      const newIsHardcore = !prev;
+      // Restore tick speed based on hardcore mode if game was active, otherwise it's handled by startGame or toggleHardcoreMode
       if (isPlaying) {
-        setTickSpeed(newIsHardcore ? TickSpeed.HardcoreNormal : TickSpeed.Normal);
+        setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
       }
-      return newIsHardcore;
-    });
-  }, [isPlaying]);
+    };
+  }, [dispatchBoardState, isPlaying, isHardcoreMode, setTickSpeed]);
 
   const renderedBoard = structuredClone(board) as BoardShape;
   if (isPlaying) {

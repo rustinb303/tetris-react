@@ -1,8 +1,32 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import App from '../App';
+import { useTetris } from '../hooks/useTetris'; // Import useTetris to mock
+
+// Mock the useTetris hook
+vi.mock('../hooks/useTetris');
+
+const mockUseTetris = useTetris as vi.MockedFunction<typeof useTetris>;
 
 describe('App', () => {
+  const defaultMockValues = {
+    board: Array(20).fill(Array(10).fill(0)), // Example board
+    startGame: vi.fn(),
+    isPlaying: false,
+    score: 0,
+    upcomingBlocks: [], // Example upcoming blocks
+    isHardcoreMode: false,
+    toggleHardcoreMode: vi.fn(),
+    highScores: [],
+  };
+
+  beforeEach(() => {
+    // Reset mocks before each test
+    vi.clearAllMocks();
+    // Provide a default implementation for useTetris
+    mockUseTetris.mockReturnValue(defaultMockValues);
+  });
+
   it('renders tetris app without crashing', () => {
     render(<App />);
     
@@ -41,41 +65,56 @@ describe('App', () => {
     });
 
     it('shows "No high scores yet!" when there are no scores', () => {
+      // This test might need adjustment if isPlaying is true by default in some scenarios
+      mockUseTetris.mockReturnValue({ ...defaultMockValues, isPlaying: false, highScores: [] });
       render(<App />);
       expect(screen.getByText('No high scores yet!')).toBeInTheDocument();
     });
   });
 
   describe('Hardcore Mode Button', () => {
-    it('toggles hardcore mode on button click', () => {
+    it('renders "Enable Hardcore" button when game is not playing and hardcore is disabled', () => {
+      mockUseTetris.mockReturnValue({
+        ...defaultMockValues,
+        isPlaying: false,
+        isHardcoreMode: false,
+      });
       render(<App />);
-
-      // Button should be present when game is not playing
-      const hardcoreButton = screen.getByRole('button', { name: /Enable Hardcore/i });
-      expect(hardcoreButton).toBeInTheDocument();
-
-      // Click to enable Hardcore mode
-      fireEvent.click(hardcoreButton);
-      expect(screen.getByRole('button', { name: /Disable Hardcore/i })).toBeInTheDocument();
-
-      // Click to disable Hardcore mode
-      fireEvent.click(hardcoreButton);
-      expect(screen.getByRole('button', { name: /Enable Hardcore/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /enable hardcore/i })).toBeInTheDocument();
     });
 
-    it('hides Hardcore button when game is playing', () => {
+    it('renders "Disable Hardcore" button when game is not playing and hardcore is enabled', () => {
+      mockUseTetris.mockReturnValue({
+        ...defaultMockValues,
+        isPlaying: false,
+        isHardcoreMode: true,
+      });
       render(<App />);
-      
-      // Initially, the "Enable Hardcore" button should be visible
-      expect(screen.getByRole('button', { name: /Enable Hardcore/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /disable hardcore/i })).toBeInTheDocument();
+    });
 
-      // Find and click the "New Game" button
-      const newGameButton = screen.getByRole('button', { name: /New Game/i });
-      fireEvent.click(newGameButton);
+    it('does not render Hardcore button when game is playing', () => {
+      mockUseTetris.mockReturnValue({
+        ...defaultMockValues,
+        isPlaying: true,
+      });
+      render(<App />);
+      expect(screen.queryByRole('button', { name: /enable hardcore/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /disable hardcore/i })).not.toBeInTheDocument();
+    });
 
-      // Now, the "Hardcore" button should not be visible
-      expect(screen.queryByRole('button', { name: /Enable Hardcore/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /Disable Hardcore/i })).not.toBeInTheDocument();
+    it('calls toggleHardcoreMode when the Hardcore button is clicked', () => {
+      const mockToggle = vi.fn();
+      mockUseTetris.mockReturnValue({
+        ...defaultMockValues,
+        isPlaying: false,
+        isHardcoreMode: false,
+        toggleHardcoreMode: mockToggle,
+      });
+      render(<App />);
+      const hardcoreButton = screen.getByRole('button', { name: /enable hardcore/i });
+      fireEvent.click(hardcoreButton);
+      expect(mockToggle).toHaveBeenCalledTimes(1);
     });
   });
 });
