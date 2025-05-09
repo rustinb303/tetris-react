@@ -7,6 +7,7 @@ enum TickSpeed {
   Normal = 800,
   Sliding = 100,
   Fast = 50,
+  Hardcore = 80,
 }
 
 // Mock the entire useTetrisBoard module
@@ -132,6 +133,90 @@ describe('useTetris', () => {
       localStorage.setItem('highScores', 'invalid-json');
       const { result } = renderHook(() => useTetris());
       expect(result.current.highScores).toEqual([]);
+    });
+  });
+
+  describe('hardcore mode', () => {
+    it('initializes with hardcore mode disabled', () => {
+      const { result } = renderHook(() => useTetris());
+      expect(result.current.isHardcoreMode).toBe(false);
+    });
+
+    it('toggles hardcore mode', () => {
+      const { result } = renderHook(() => useTetris());
+      act(() => {
+        result.current.toggleHardcoreMode();
+      });
+      expect(result.current.isHardcoreMode).toBe(true);
+      act(() => {
+        result.current.toggleHardcoreMode();
+      });
+      expect(result.current.isHardcoreMode).toBe(false);
+    });
+
+    it('starts game with TickSpeed.Normal when hardcore mode is disabled', () => {
+      const { result } = renderHook(() => useTetris());
+      act(() => {
+        result.current.startGame();
+      });
+      expect(result.current.tickSpeed).toBe(TickSpeed.Normal);
+    });
+
+    it('starts game with TickSpeed.Hardcore when hardcore mode is enabled', () => {
+      const { result } = renderHook(() => useTetris());
+      act(() => {
+        result.current.toggleHardcoreMode();
+      });
+      act(() => {
+        result.current.startGame();
+      });
+      expect(result.current.tickSpeed).toBe(TickSpeed.Hardcore);
+    });
+
+    it('handles ArrowDown key events correctly in normal mode', () => {
+      const { result } = renderHook(() => useTetris());
+      act(() => {
+        result.current.startGame(); // Start game in normal mode
+      });
+
+      // Simulate ArrowDown keydown
+      act(() => {
+        const event = new KeyboardEvent('keydown', { key: 'ArrowDown' });
+        document.dispatchEvent(event);
+      });
+      expect(result.current.tickSpeed).toBe(TickSpeed.Fast);
+
+      // Simulate ArrowDown keyup
+      act(() => {
+        const event = new KeyboardEvent('keyup', { key: 'ArrowDown' });
+        document.dispatchEvent(event);
+      });
+      expect(result.current.tickSpeed).toBe(TickSpeed.Normal);
+    });
+
+    it('handles ArrowDown key events correctly in hardcore mode', () => {
+      const { result } = renderHook(() => useTetris());
+      act(() => {
+        result.current.toggleHardcoreMode();
+      });
+      act(() => {
+        result.current.startGame(); // Start game in hardcore mode
+      });
+      expect(result.current.tickSpeed).toBe(TickSpeed.Hardcore);
+
+      // Simulate ArrowDown keydown
+      act(() => {
+        const event = new KeyboardEvent('keydown', { key: 'ArrowDown' });
+        document.dispatchEvent(event);
+      });
+      expect(result.current.tickSpeed).toBe(TickSpeed.Hardcore); // Should remain Hardcore
+
+      // Simulate ArrowDown keyup
+      act(() => {
+        const event = new KeyboardEvent('keyup', { key: 'ArrowDown' });
+        document.dispatchEvent(event);
+      });
+      expect(result.current.tickSpeed).toBe(TickSpeed.Hardcore); // Should remain Hardcore
     });
   });
 });
