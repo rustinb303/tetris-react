@@ -1,17 +1,15 @@
-import React from 'react';
-
-const KeyboardCommands: React.FC = () => {
+function KeyboardCommands() {
   return (
     <div className="keyboard-commands">
       <h2>Keyboard Commands</h2>
       <ul>
-        <li>ArrowDown: Speed up drop</li>
-        <li>ArrowUp: Rotate block</li>
-        <li>ArrowLeft: Move left</li>
-        <li>ArrowRight: Move right</li>
+        <li><strong>ArrowDown:</strong> Speed up</li>
+        <li><strong>ArrowUp:</strong> Rotate</li>
+        <li><strong>ArrowLeft:</strong> Move left</li>
+        <li><strong>ArrowRight:</strong> Move right</li>
       </ul>
     </div>
   );
-};
+}
 
 export default KeyboardCommands;

@@ -1,8 +1,8 @@
 import Board from './components/Board';
 import UpcomingBlocks from './components/UpcomingBlocks';
 import HighScores from './components/HighScores';
-import KeyboardCommands from './components/KeyboardCommands';
 import { useTetris } from './hooks/useTetris';
+import KeyboardCommands from './components/KeyboardCommands';
 
 function App() {
   const { board, startGame, isPlaying, score, upcomingBlocks } = useTetris();
@@ -19,9 +19,9 @@ function App() {
           <>
             <button onClick={startGame}>New Game</button>
             <HighScores />
-            <KeyboardCommands />
           </>
         )}
+        <KeyboardCommands />
       </div>
     </div>
   );
