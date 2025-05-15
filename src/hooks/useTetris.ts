@@ -3,21 +3,21 @@ import      {Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
 import {  useInterval } from './useInterval';
 import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock,} from './useTetrisBoard';
 
-const max_High_scores = 10;
+const MAX_HIGH_SCORES = 10;
 
 // Function... seems self explanatory to me 
 export function saveHighScore(score: number): void {
   const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
   const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, max_High_scores);
+    .slice(0, MAX_HIGH_SCORES);
     localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
 // Function... also self explanatory 
-export function GetHighScores(): number[] {
+export function getHighScores(): number[] {
       try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
+    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, MAX_HIGH_SCORES) : [];
   } catch {return [];
   }
 }
@@ -233,7 +233,7 @@ export function useTetris() {
     isPlaying,
     score,
     upcomingBlocks,
-    highScores: GetHighScores(),
+    highScores: getHighScores(),
   };
 }
 
