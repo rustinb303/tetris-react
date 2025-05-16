@@ -4,7 +4,7 @@ import HighScores from './components/HighScores';
 import { useTetris } from './hooks/useTetris';
 
 function App() {
-  const { board, startGame, isPlaying, score, upcomingBlocks } = useTetris();
+  const { board, startGame, startHardcoreGame, isPlaying, score, upcomingBlocks } = useTetris();
 
   return (
     <div className="app">
@@ -17,6 +17,7 @@ function App() {
         ) : (
           <>
             <button onClick={startGame}>New Game</button>
+            <button onClick={startHardcoreGame}>Hardcore Mode</button>
             <HighScores />
           </>
         )}
