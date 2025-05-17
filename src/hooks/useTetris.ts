@@ -27,7 +27,7 @@ enum TickSpeed {
   Normal = 800,
   Sliding = 100,
   Fast = 50,
-  Hardcore = 80,
+  Hardcore = 40, // Normal / 20
 }
 
 // main function. todo: add comments
@@ -37,16 +37,12 @@ export function useTetris() {
   const [isCommitting, setIsCommitting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [tickSpeed, setTickSpeed] = useState<TickSpeed | null>(null);
-  const [isHardcoreMode, setIsHardcoreMode] = useState(false);
+  const [isHardcoreMode, setIsHardcoreMode] = useState(false); // New state variable
 
   const [
     { board, droppingRow, droppingColumn, droppingBlock, droppingShape },
     dispatchBoardState,
   ] = useTetrisBoard();
-
-  const toggleHardcoreMode = useCallback(() => {
-    setIsHardcoreMode((prev) => !prev);
-  }, []);
 
   const startGame = useCallback(() => {
     const startingBlocks = [
@@ -95,7 +91,7 @@ export function useTetris() {
       setIsPlaying(false);
       setTickSpeed(null);
     } else {
-      setTickSpeed(TickSpeed.Normal);
+      setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
     }
     setUpcomingBlocks(newUpcomingBlocks);
     setScore((prevScore) => prevScore + getPoints(numCleared));
@@ -114,6 +110,7 @@ export function useTetris() {
     droppingShape,
     upcomingBlocks,
     score,
+    isHardcoreMode, // Add isHardcoreMode to dependencies
   ]);
 
   const gameTick = useCallback(() => {
@@ -175,7 +172,9 @@ export function useTetris() {
       }
 
       if (event.key === 'ArrowDown') {
-        setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Fast);
+        if (!isHardcoreMode) { // Only allow speed up if not in hardcore mode
+          setTickSpeed(TickSpeed.Fast);
+        }
       }
 
       if (event.key === 'ArrowUp') {
@@ -198,7 +197,9 @@ export function useTetris() {
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.key === 'ArrowDown') {
-        setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
+        if (!isHardcoreMode) { // Only revert to normal if not in hardcore mode
+          setTickSpeed(TickSpeed.Normal);
+        }
       }
 
       if (event.key === 'ArrowLeft') {
@@ -220,7 +221,23 @@ export function useTetris() {
       clearInterval(moveIntervalID);
       setTickSpeed(isHardcoreMode ? TickSpeed.Hardcore : TickSpeed.Normal);
     };
-  }, [dispatchBoardState, isPlaying, isHardcoreMode]);
+  }, [dispatchBoardState, isPlaying, isHardcoreMode]); // Add isHardcoreMode
+
+  const toggleHardcoreMode = useCallback(() => {
+    setIsHardcoreMode((prevIsHardcoreMode) => {
+      const newIsHardcoreMode = !prevIsHardcoreMode;
+      if (isPlaying) {
+        if (newIsHardcoreMode) {
+          setTickSpeed(TickSpeed.Hardcore);
+        } else {
+          setTickSpeed(TickSpeed.Normal); // Revert to Normal. ArrowDown handler will manage Fast speed.
+        }
+      }
+      // If !isPlaying, tickSpeed should remain as is (likely null),
+      // startGame will set the correct speed.
+      return newIsHardcoreMode;
+    });
+  }, [isPlaying, setTickSpeed, setIsHardcoreMode]);
 
   const renderedBoard = structuredClone(board) as BoardShape;
   if (isPlaying) {
@@ -240,9 +257,8 @@ export function useTetris() {
     score,
     upcomingBlocks,
     highScores: GetHighScores(),
-    isHardcoreMode,
-    toggleHardcoreMode,
-    tickSpeed, // Exposed for testing
+    isHardcoreMode, // Return isHardcoreMode
+    toggleHardcoreMode, // Return toggleHardcoreMode
   };
 }
 
