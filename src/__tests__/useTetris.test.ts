@@ -104,7 +104,7 @@ describe('useTetris', () => {
       
       // Verify high score was saved correctly
       expect(setItemSpy).toHaveBeenCalledWith('highScores', expect.any(String));
-      const savedScores = getHighScores();
+      const savedScores = GetHighScores();
       expect(savedScores).toContain(testScore);
       
       // Clean up
