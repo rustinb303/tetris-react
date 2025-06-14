@@ -1,35 +1,90 @@
-import    {useCallback, useEffect, useState } from 'react';
-import      {Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
-import {  useInterval } from './useInterval';
-import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock,} from './useTetrisBoard';
+/**
+ * Tetris game-play React hook and helper utilities
+ * ------------------------------------------------
+ * 1.  High-score persistence helpers
+ * 2.  TickSpeed enum – controls game-loop cadence
+ * 3.  useTetris – main hook consumed by UI layer
+ * 4.  Internal helper functions
+ *
+ *  NOTE:
+ *  This file purposefully avoids rendering concerns; it only manages state
+ *  and game-logic (board updates, scoring, piece movement, etc.).
+ */
 
-const max_High_scores = 10;
+/* -------------------------------------------------------------------------- */
+/*  Imports                                                                   */
+/* -------------------------------------------------------------------------- */
 
-// Function... seems self explanatory to me 
+import { useCallback, useEffect, useState } from 'react';
+import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
+import { useInterval } from './useInterval';
+import {
+  useTetrisBoard,
+  hasCollisions,
+  BOARD_HEIGHT,
+  getEmptyBoard,
+  getRandomBlock,
+} from './useTetrisBoard';
+
+/* -------------------------------------------------------------------------- */
+/*  Constants                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/** Maximum number of high-scores we keep in localStorage. */
+const MAX_HIGH_SCORES = 10;
+
+/* -------------------------------------------------------------------------- */
+/*  High-score helpers                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Persist a new score to localStorage, maintaining only the top
+ * `MAX_HIGH_SCORES` scores in descending order.
+ */
 export function saveHighScore(score: number): void {
   const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
   const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, max_High_scores);
-    localStorage.setItem('highScores', JSON.stringify(updatedScores));
+    .slice(0, MAX_HIGH_SCORES);
+
+  localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
-// Function... also self explanatory 
-export function GetHighScores(): number[] {
-      try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
-  } catch {return [];
+/**
+ * Retrieve a sorted (desc) list of high-scores from localStorage.
+ * Falls back to an empty array if the stored value is corrupted.
+ */
+export function getHighScores(): number[] {
+  try {
+    const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+    return Array.isArray(scores)
+      ? scores.sort((a: number, b: number) => b - a).slice(0, MAX_HIGH_SCORES)
+      : [];
+  } catch {
+    return [];
   }
 }
 
-// this does something with the board, but I'm not sure what
+/* -------------------------------------------------------------------------- */
+/*  Game-loop tick speeds                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * TickSpeed controls how frequently the game loop updates:
+ *  Normal  – default falling speed of the current piece
+ *  Sliding – brief grace period after a collision before the piece locks
+ *  Fast    – speed while the player holds Arrow-Down
+ */
 enum TickSpeed {
   Normal = 800,
   Sliding = 100,
   Fast = 50,
 }
 
-// main function. todo: add comments
+/* -------------------------------------------------------------------------- */
+/*  Public hook                                                               */
+/* -------------------------------------------------------------------------- */
+
 export function useTetris() {
   const [score, setScore] = useState(0);
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
@@ -233,9 +288,12 @@ export function useTetris() {
     isPlaying,
     score,
     upcomingBlocks,
-    highScores: GetHighScores(),
+    highScores: getHighScores(),
   };
 }
+/* -------------------------------------------------------------------------- */
+/*  Internal helpers                                                          */
+/* -------------------------------------------------------------------------- */
 
 function getPoints(numCleared: number): number {
   switch (numCleared) {

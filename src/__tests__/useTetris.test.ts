@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { hasCollisions, useTetrisBoard } from '../hooks/useTetrisBoard';
-import { useTetris, saveHighScore, GetHighScores } from '../hooks/useTetris';
+import { useTetris, saveHighScore, getHighScores } from '../hooks/useTetris';
 
 enum TickSpeed {
   Normal = 800,
@@ -104,7 +104,7 @@ describe('useTetris', () => {
       
       // Verify high score was saved correctly
       expect(setItemSpy).toHaveBeenCalledWith('highScores', expect.any(String));
-      const savedScores = getHighScores();
+      const savedScores = GetHighScores();
       expect(savedScores).toContain(testScore);
       
       // Clean up
