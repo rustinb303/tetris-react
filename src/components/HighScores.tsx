@@ -1,7 +1,9 @@
 import React from 'react';
+// Import the updated camel-cased helper
 import { getHighScores } from '../hooks/useTetris';
 
 function HighScores() {
+  // Fetch top scores (already sorted in helper) and limit to 10 entries
   const highScores = getHighScores().slice(0, 10);
   
   if (highScores.length === 0) {
