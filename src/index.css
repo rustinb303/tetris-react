@@ -270,3 +270,56 @@ button:active {
   border-radius: 4px;
   text-align: center;
 }
+
+/* Keyboard Controls Styles */
+.keyboard-controls {
+  width: 160px;
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  color: white;
+}
+
+.keyboard-controls h3 {
+  color: white;
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.controls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.control-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+.key-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+}
+
+.control-item span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+}
