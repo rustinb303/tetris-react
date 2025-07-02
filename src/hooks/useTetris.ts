@@ -1,35 +1,57 @@
-import    {useCallback, useEffect, useState } from 'react';
-import      {Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
-import {  useInterval } from './useInterval';
-import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock,} from './useTetrisBoard';
+/**
+ * useTetris Hook
+ * 
+ * This file contains the main game logic hook for the Tetris game.
+ * It manages game state, scoring, block movement, line clearing, and user input handling.
+ * The hook orchestrates the interaction between the board state and game mechanics.
+ */
 
-const max_High_scores = 10;
+import { useCallback, useEffect, useState } from 'react';
+import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
+import { useInterval } from './useInterval';
+import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock } from './useTetrisBoard';
 
-// Function... seems self explanatory to me 
+const MAX_HIGH_SCORES = 10;
+
+/**
+ * Saves a high score to localStorage
+ * @param score - The score to save
+ */
 export function saveHighScore(score: number): void {
   const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
   const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, max_High_scores);
-    localStorage.setItem('highScores', JSON.stringify(updatedScores));
+    .slice(0, MAX_HIGH_SCORES);
+  localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
-// Function... also self explanatory 
-export function GetHighScores(): number[] {
-      try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
-  } catch {return [];
+/**
+ * Retrieves high scores from localStorage
+ * @returns Array of high scores sorted in descending order
+ */
+export function getHighScores(): number[] {
+  try {
+    const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, MAX_HIGH_SCORES) : [];
+  } catch {
+    return [];
   }
 }
 
-// this does something with the board, but I'm not sure what
+/**
+ * Enum defining the different tick speeds for the game loop
+ * Controls how fast blocks fall and respond to user input
+ */
 enum TickSpeed {
-  Normal = 800,
-  Sliding = 100,
-  Fast = 50,
+  Normal = 800,   // Standard falling speed
+  Sliding = 100,  // Speed when block is about to be committed
+  Fast = 50,      // Speed when user holds down arrow
 }
 
-// main function. todo: add comments
+/**
+ * Main Tetris game hook that manages all game state and logic
+ * @returns Object containing game state and control functions
+ */
 export function useTetris() {
   const [score, setScore] = useState(0);
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
@@ -233,10 +255,15 @@ export function useTetris() {
     isPlaying,
     score,
     upcomingBlocks,
-    highScores: GetHighScores(),
+    highScores: getHighScores(),
   };
 }
 
+/**
+ * Calculates points based on number of lines cleared simultaneously
+ * @param numCleared - Number of lines cleared at once
+ * @returns Points awarded for the cleared lines
+ */
 function getPoints(numCleared: number): number {
   switch (numCleared) {
     case 0:
@@ -254,6 +281,14 @@ function getPoints(numCleared: number): number {
   }
 }
 
+/**
+ * Adds a falling block shape to the game board at the specified position
+ * @param board - The game board to modify
+ * @param droppingBlock - The type of block being added
+ * @param droppingShape - The shape matrix of the block
+ * @param droppingRow - The row position where the block should be placed
+ * @param droppingColumn - The column position where the block should be placed
+ */
 function addShapeToBoard(
   board: BoardShape,
   droppingBlock: Block,
