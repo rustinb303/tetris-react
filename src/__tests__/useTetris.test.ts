@@ -9,7 +9,9 @@ enum TickSpeed {
   Fast = 50,
 }
 
-// Mock the entire useTetrisBoard module
+// Mock the entire useTetrisBoard module.
+// This is done to isolate useTetris logic from useTetrisBoard internal workings,
+// allowing us to control board state, collisions, and piece movements for testing useTetris hook scenarios.
 vi.mock('../hooks/useTetrisBoard', async () => {
   const actual = await vi.importActual('../hooks/useTetrisBoard');
   return {
