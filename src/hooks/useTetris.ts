@@ -10,7 +10,7 @@ import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
 import { useInterval } from './useInterval';
 import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock } from './useTetrisBoard';
 
-const MAX_HIGH_SCORES = 10;
+const max_High_scores = 10;
 
 /**
  * Saves a score to the high scores list in localStorage.
@@ -22,7 +22,7 @@ export function saveHighScore(score: number): void {
   const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
   const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, MAX_HIGH_SCORES);
+    .slice(0, max_High_scores);
     localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
@@ -35,7 +35,7 @@ export function saveHighScore(score: number): void {
  */
 export function getHighScores(): number[] {
       try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, MAX_HIGH_SCORES) : [];
+    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
   } catch {return [];
   }
 }
@@ -53,8 +53,7 @@ enum TickSpeed {
 /**
  * Main Tetris game hook that manages all game state and logic.
  * 
- * Handles game initialization, piece movement, collision detection,
- * line clearing, scoring, keyboard controls, and game timing.
+ * Handles game initialization, piece movement, collision detection, line clearing, scoring, keyboard controls, and game timing.
  * 
  * @returns Object containing game state and control functions
  */
