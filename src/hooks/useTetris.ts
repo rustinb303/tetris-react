@@ -1,35 +1,63 @@
-import    {useCallback, useEffect, useState } from 'react';
-import      {Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
-import {  useInterval } from './useInterval';
-import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock,} from './useTetrisBoard';
+/**
+ * Main Tetris game logic hook and high score management utilities.
+ * 
+ * This module provides the core useTetris hook that manages game state,
+ * scoring, timing, keyboard controls, and high score persistence.
+ * Also exports utility functions for saving and retrieving high scores.
+ */
+import { useCallback, useEffect, useState } from 'react';
+import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
+import { useInterval } from './useInterval';
+import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock } from './useTetrisBoard';
 
-const max_High_scores = 10;
+const MAX_HIGH_SCORES = 10;
 
-// Function... seems self explanatory to me 
+/**
+ * Saves a score to the high scores list in localStorage.
+ * Maintains only the top 10 scores in descending order.
+ * 
+ * @param score - The score to save
+ */
 export function saveHighScore(score: number): void {
   const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
   const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, max_High_scores);
+    .slice(0, MAX_HIGH_SCORES);
     localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
-// Function... also self explanatory 
-export function GetHighScores(): number[] {
+/**
+ * Retrieves and returns the high scores from localStorage.
+ * Returns scores sorted in descending order, limited to top 10.
+ * Handles invalid data gracefully by returning empty array.
+ * 
+ * @returns Array of high scores in descending order
+ */
+export function getHighScores(): number[] {
       try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
+    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, MAX_HIGH_SCORES) : [];
   } catch {return [];
   }
 }
 
-// this does something with the board, but I'm not sure what
+/**
+ * Game timing speeds in milliseconds.
+ * Controls how frequently the game tick occurs.
+ */
 enum TickSpeed {
   Normal = 800,
   Sliding = 100,
   Fast = 50,
 }
 
-// main function. todo: add comments
+/**
+ * Main Tetris game hook that manages all game state and logic.
+ * 
+ * Handles game initialization, piece movement, collision detection,
+ * line clearing, scoring, keyboard controls, and game timing.
+ * 
+ * @returns Object containing game state and control functions
+ */
 export function useTetris() {
   const [score, setScore] = useState(0);
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
@@ -233,10 +261,17 @@ export function useTetris() {
     isPlaying,
     score,
     upcomingBlocks,
-    highScores: GetHighScores(),
+    highScores: getHighScores(),
   };
 }
 
+/**
+ * Calculates points awarded based on number of lines cleared simultaneously.
+ * Uses standard Tetris scoring: 1 line = 100, 2 lines = 300, 3 lines = 500, 4 lines = 800.
+ * 
+ * @param numCleared - Number of lines cleared in one move
+ * @returns Points to award for the cleared lines
+ */
 function getPoints(numCleared: number): number {
   switch (numCleared) {
     case 0:
@@ -254,6 +289,16 @@ function getPoints(numCleared: number): number {
   }
 }
 
+/**
+ * Adds a tetromino shape to the board at the specified position.
+ * Modifies the board in place by setting cells to the block type.
+ * 
+ * @param board - The game board to modify
+ * @param droppingBlock - The type of block being placed
+ * @param droppingShape - The shape matrix of the block
+ * @param droppingRow - Row position to place the block
+ * @param droppingColumn - Column position to place the block
+ */
 function addShapeToBoard(
   board: BoardShape,
   droppingBlock: Block,
