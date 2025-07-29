@@ -1,41 +1,18 @@
+/**
+ * This file contains the core logic for the Tetris game.
+ * It exports the `useTetris` hook, which manages the game state,
+ * player actions, and game loop.
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
 import { useInterval } from './useInterval';
 import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock } from './useTetrisBoard';
 
-const maxHighScores = 10;
+const MAX_HIGH_SCORES = 10;
+const MOVEMENT_INTERVAL = 300;
 
 /**
- * Saves a new score to the high scores list in local storage.
- * Keeps the list sorted and limits it to the top `maxHighScores`.
- * @param score The score to save.
- */
-export function saveHighScore(score: number): void {
-  const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
-  existingScores.push(score);
-  const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, maxHighScores);
-    localStorage.setItem('highScores', JSON.stringify(updatedScores));
-}
-
-/**
- * Retrieves the list of high scores from local storage.
- * Returns a sorted array of scores, limited to `maxHighScores`.
- * Returns an empty array if no scores are found or if there's an error parsing the data.
- * @returns An array of numbers representing the high scores.
- */
-export function GetHighScores(): number[] {
-      try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, maxHighScores) : [];
-  } catch {return [];
-  }
-}
-
-/**
- * Represents the speed at which the game ticks, determining how fast blocks fall.
- * - Normal: The standard falling speed.
- * - Sliding: A brief period after a block hits the stack, allowing the player to slide it horizontally.
- * - Fast: Increased speed when the player holds the 'down' arrow key.
+ * Enum for the different speeds of the game tick.
  */
 enum TickSpeed {
   Normal = 800,
@@ -44,25 +21,88 @@ enum TickSpeed {
 }
 
 /**
- * Custom hook to manage the core logic and state of the Tetris game.
- *
- * Returns the game board, player score, upcoming blocks, high scores,
- * and functions to control the game (e.g., startGame).
- * Handles game ticks, block movements, rotations, line clearing, scoring,
- * and game over conditions.
- *
- * @returns An object containing the game state and control functions.
+ * Calculates the score for a given number of cleared lines.
+ * @param numCleared The number of lines cleared.
+ * @returns The score for the cleared lines.
+ */
+function getPoints(numCleared: number): number {
+  switch (numCleared) {
+    case 0:
+      return 0;
+    case 1:
+      return 100;
+    case 2:
+      return 300;
+    case 3:
+      return 500;
+    case 4:
+      return 800;
+    default:
+      throw new Error('Unexpected number of rows cleared');
+  }
+}
+
+/**
+ * Adds a block's shape to the board at a given position.
+ * @param board The board to add the shape to.
+ * @param droppingBlock The block to add.
+ * @param droppingShape The shape of the block.
+ * @param droppingRow The row to add the block at.
+ * @param droppingColumn The column to add the block at.
+ */
+function addShapeToBoard(
+  board: BoardShape,
+  droppingBlock: Block,
+  droppingShape: BlockShape,
+  droppingRow: number,
+  droppingColumn: number
+) {
+  droppingShape
+    .filter((row) => row.some((isSet) => isSet))
+    .forEach((row: boolean[], rowIndex: number) => {
+      row.forEach((isSet: boolean, colIndex: number) => {
+        if (isSet) {
+          board[droppingRow + rowIndex][droppingColumn + colIndex] =
+            droppingBlock;
+        }
+      });
+    });
+}
+
+/**
+ * Saves the player's score to local storage.
+ * @param score The score to save.
+ */
+export function saveHighScore(score: number): void {
+  const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+  existingScores.push(score);
+  const updatedScores = existingScores.sort((a: number, b: number) => b - a)
+    .slice(0, MAX_HIGH_SCORES);
+  localStorage.setItem('highScores', JSON.stringify(updatedScores));
+}
+
+/**
+ * Retrieves the list of high scores from local storage.
+ * @returns An array of high scores, sorted in descending order.
+ */
+export function getHighScores(): number[] {
+  try {
+    const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, MAX_HIGH_SCORES) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Custom hook that manages the state and logic of the Tetris game.
+ * @returns An object with the current game state and functions to control the game.
  */
 export function useTetris() {
-  // Player's current score
   const [score, setScore] = useState(0);
-  // Queue of the next blocks to be dropped
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
-  // Flag indicating if the current block is in the 'sliding' phase before committing
   const [isCommitting, setIsCommitting] = useState(false);
-  // Flag indicating if the game is currently active
   const [isPlaying, setIsPlaying] = useState(false);
-  // Current speed of the game ticks (null if game not running)
   const [tickSpeed, setTickSpeed] = useState<TickSpeed | null>(null);
 
   const [
@@ -70,7 +110,9 @@ export function useTetris() {
     dispatchBoardState,
   ] = useTetrisBoard();
 
-  // Starts a new game, resetting the board, score, and upcoming blocks.
+  /**
+   * Starts a new game of Tetris.
+   */
   const startGame = useCallback(() => {
     const startingBlocks = [
       getRandomBlock(),
@@ -85,16 +127,18 @@ export function useTetris() {
     dispatchBoardState({ type: 'start' });
   }, [dispatchBoardState]);
 
-  // Commits the current dropping block to the board.
-  // Handles line clearing, score updates, generates the next block,
-  // and checks for game over conditions.
+  /**
+   * Commits the current block to the board.
+   */
   const commitPosition = useCallback(() => {
+    // If the block has space to move down, it's not ready to be committed yet
     if (!hasCollisions(board, droppingShape, droppingRow + 1, droppingColumn)) {
       setIsCommitting(false);
       setTickSpeed(TickSpeed.Normal);
       return;
     }
 
+    // Add the block to the board
     const newBoard = structuredClone(board) as BoardShape;
     addShapeToBoard(
       newBoard,
@@ -104,6 +148,7 @@ export function useTetris() {
       droppingColumn
     );
 
+    // Clear any completed rows
     let numCleared = 0;
     for (let row = BOARD_HEIGHT - 1; row >= 0; row--) {
       if (newBoard[row].every((entry) => entry !== EmptyCell.Empty)) {
@@ -112,10 +157,12 @@ export function useTetris() {
       }
     }
 
+    // Get the next block
     const newUpcomingBlocks = structuredClone(upcomingBlocks) as Block[];
     const newBlock = newUpcomingBlocks.pop() as Block;
     newUpcomingBlocks.unshift(getRandomBlock());
 
+    // Check for game over
     if (hasCollisions(board, SHAPES[newBlock].shape, 0, 3)) {
       saveHighScore(score);
       setIsPlaying(false);
@@ -123,6 +170,7 @@ export function useTetris() {
     } else {
       setTickSpeed(TickSpeed.Normal);
     }
+
     setUpcomingBlocks(newUpcomingBlocks);
     setScore((prevScore) => prevScore + getPoints(numCleared));
     dispatchBoardState({
@@ -142,18 +190,20 @@ export function useTetris() {
     score,
   ]);
 
-  // Represents a single tick of the game loop.
-  // Handles dropping the current block, checking for collisions,
-  // and triggering the commit phase when a block lands.
+  /**
+   * The main game loop, called on every tick.
+   */
   const gameTick = useCallback(() => {
     if (isCommitting) {
       commitPosition();
     } else if (
       hasCollisions(board, droppingShape, droppingRow + 1, droppingColumn)
     ) {
+      // If the block is about to collide, give the player a moment to slide it
       setTickSpeed(TickSpeed.Sliding);
       setIsCommitting(true);
     } else {
+      // Otherwise, move the block down
       dispatchBoardState({ type: 'drop' });
     }
   }, [
@@ -173,8 +223,6 @@ export function useTetris() {
     gameTick();
   }, tickSpeed);
 
-  // Effect hook to handle keyboard input for controlling the game.
-  // Listens for keydown and keyup events to move, rotate, and speed up the dropping block.
   useEffect(() => {
     if (!isPlaying) {
       return;
@@ -197,10 +245,9 @@ export function useTetris() {
           isPressingLeft,
           isPressingRight,
         });
-      }, 300);
+      }, MOVEMENT_INTERVAL);
     };
 
-    // Handles key press events (ArrowDown, ArrowUp, ArrowLeft, ArrowRight).
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) {
         return;
@@ -228,7 +275,6 @@ export function useTetris() {
       }
     };
 
-     // Handles key release events (ArrowDown, ArrowLeft, ArrowRight).
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.key === 'ArrowDown') {
         setTickSpeed(TickSpeed.Normal);
@@ -247,7 +293,6 @@ export function useTetris() {
 
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
-    // Cleanup function: remove event listeners and clear intervals when the component unmounts or isPlaying changes.
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
@@ -256,6 +301,7 @@ export function useTetris() {
     };
   }, [dispatchBoardState, isPlaying]);
 
+  // Create a temporary board that includes the dropping block
   const renderedBoard = structuredClone(board) as BoardShape;
   if (isPlaying) {
     addShapeToBoard(
@@ -273,42 +319,6 @@ export function useTetris() {
     isPlaying,
     score,
     upcomingBlocks,
-    highScores: GetHighScores(),
+    highScores: getHighScores(),
   };
-}
-
-function getPoints(numCleared: number): number {
-  switch (numCleared) {
-    case 0:
-      return 0;
-    case 1:
-      return 100;
-    case 2:
-      return 300;
-    case 3:
-      return 500;
-    case 4:
-      return 800;
-    default:
-      throw new Error('Unexpected number of rows cleared');
-  }
-}
-
-function addShapeToBoard(
-  board: BoardShape,
-  droppingBlock: Block,
-  droppingShape: BlockShape,
-  droppingRow: number,
-  droppingColumn: number
-) {
-  droppingShape
-    .filter((row) => row.some((isSet) => isSet))
-    .forEach((row: boolean[], rowIndex: number) => {
-      row.forEach((isSet: boolean, colIndex: number) => {
-        if (isSet) {
-          board[droppingRow + rowIndex][droppingColumn + colIndex] =
-            droppingBlock;
-        }
-      });
-    });
 }
