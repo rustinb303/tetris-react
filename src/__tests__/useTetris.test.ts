@@ -73,6 +73,32 @@ describe('useTetris', () => {
       expect(result.current.score).toBe(0);
       expect(result.current.upcomingBlocks.length).toBeGreaterThan(0);
       expect(result.current.board).toBeDefined();
+
+      act(() => {
+        vi.runAllTimers();
+      });
+    });
+  });
+
+  describe('game loop', () => {
+    it('moves the block down on game tick', () => {
+      const { result } = renderHook(() => useTetris());
+      const { useTetrisBoard: mockUseTetrisBoard } = vi.mocked(
+        await vi.importActual('../hooks/useTetrisBoard')
+      );
+      const dispatchBoardState = mockUseTetrisBoard().dispatchBoardState;
+
+      act(() => {
+        result.current.startGame();
+      });
+
+      (hasCollisions as vi.Mock).mockReturnValue(false);
+
+      act(() => {
+        vi.advanceTimersByTime(TickSpeed.Normal);
+      });
+
+      expect(dispatchBoardState).toHaveBeenCalledWith({ type: 'drop' });
     });
   });
 
