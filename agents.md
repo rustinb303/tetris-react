@@ -45,14 +45,4 @@ npm install
 npm run build
 
 Step 2: Run Tests
-After a successful build, execute the test suite to confirm that existing functionality remains intact and new features work as expected.
-
-Testing Instructions:
-
-# Ensure dependencies are installed
-npm install
-
-# Run the test script
-npm run test
-
-Only after both the build and test commands execute successfully can the task be considered complete.
+Use playwright to run and render and test the app to verify it appears to be working 
