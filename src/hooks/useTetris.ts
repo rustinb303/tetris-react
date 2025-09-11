@@ -1,35 +1,53 @@
-import    {useCallback, useEffect, useState } from 'react';
-import      {Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
-import {  useInterval } from './useInterval';
-import { useTetrisBoard, hasCollisions, BOARD_HEIGHT, getEmptyBoard, getRandomBlock,} from './useTetrisBoard';
+import { useCallback, useEffect, useState } from 'react';
 
-const max_High_scores = 10;
+import { Block, BlockShape, BoardShape, EmptyCell, SHAPES } from '../types';
+import { useInterval } from './useInterval';
+import {
+  useTetrisBoard,
+  hasCollisions,
+  BOARD_HEIGHT,
+  getEmptyBoard,
+  getRandomBlock,
+} from './useTetrisBoard';
 
-// Function... seems self explanatory to me 
+const MAX_HIGH_SCORES = 10;
+
+/**
+ * Saves a new score to the high scores list in localStorage.
+ * Keeps only the top MAX_HIGH_SCORES scores in descending order.
+ * @param score - The score to save.
+ */
 export function saveHighScore(score: number): void {
   const existingScores = JSON.parse(localStorage.getItem('highScores') || '[]');
   existingScores.push(score);
   const updatedScores = existingScores.sort((a: number, b: number) => b - a)
-    .slice(0, max_High_scores);
+    .slice(0, MAX_HIGH_SCORES);
     localStorage.setItem('highScores', JSON.stringify(updatedScores));
 }
 
-// Function... also self explanatory 
-export function GetHighScores(): number[] {
+/**
+ * Retrieves the list of high scores from localStorage.
+ * Scores are sorted in descending order and limited to MAX_HIGH_SCORES.
+ * @returns An array of numbers representing the high scores, or an empty array if none are found or an error occurs.
+ */
+export function getHighScores(): number[] {
       try { const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, max_High_scores) : [];
+    return Array.isArray(scores) ? scores.sort((a, b) => b - a).slice(0, MAX_HIGH_SCORES) : [];
   } catch {return [];
   }
 }
 
-// this does something with the board, but I'm not sure what
 enum TickSpeed {
   Normal = 800,
   Sliding = 100,
   Fast = 50,
 }
 
-// main function. todo: add comments
+/**
+ * Custom hook to manage the Tetris game logic and state.
+ * @returns An object containing the game board, functions to control the game (startGame),
+ * current game status (isPlaying, score), upcoming blocks, and current high scores.
+ */
 export function useTetris() {
   const [score, setScore] = useState(0);
   const [upcomingBlocks, setUpcomingBlocks] = useState<Block[]>([]);
@@ -42,6 +60,11 @@ export function useTetris() {
     dispatchBoardState,
   ] = useTetrisBoard();
 
+  /**
+   * Initializes and starts a new Tetris game.
+   * Resets the score, sets up initial upcoming blocks, enables playing state,
+   * sets the tick speed to normal, and dispatches the 'start' action to the board state.
+   */
   const startGame = useCallback(() => {
     const startingBlocks = [
       getRandomBlock(),
@@ -56,6 +79,12 @@ export function useTetris() {
     dispatchBoardState({ type: 'start' });
   }, [dispatchBoardState]);
 
+  /**
+   * Commits the current dropping piece to the board.
+   * This function is called when the piece can no longer move down or when the player forces it.
+   * It checks for line clears, updates the score, prepares the next piece,
+   * and handles game over conditions if the new piece causes a collision.
+   */
   const commitPosition = useCallback(() => {
     if (!hasCollisions(board, droppingShape, droppingRow + 1, droppingColumn)) {
       setIsCommitting(false);
@@ -63,6 +92,7 @@ export function useTetris() {
       return;
     }
 
+    // Deep clone the board to avoid modifying the state directly before dispatch
     const newBoard = structuredClone(board) as BoardShape;
     addShapeToBoard(
       newBoard,
@@ -84,6 +114,7 @@ export function useTetris() {
     const newBlock = newUpcomingBlocks.pop() as Block;
     newUpcomingBlocks.unshift(getRandomBlock());
 
+    // Check for game over: if the new block has immediate collisions
     if (hasCollisions(board, SHAPES[newBlock].shape, 0, 3)) {
       saveHighScore(score);
       setIsPlaying(false);
@@ -110,6 +141,13 @@ export function useTetris() {
     score,
   ]);
 
+  /**
+   * Represents a single tick of the game loop.
+   * If the game is in a committing state, it calls `commitPosition`.
+   * Otherwise, it checks for collisions below the current piece. If a collision occurs,
+   * it sets the game to a committing state (allowing the player to slide the piece).
+   * If no collision, it dispatches a 'drop' action to move the piece down.
+   */
   const gameTick = useCallback(() => {
     if (isCommitting) {
       commitPosition();
@@ -138,6 +176,7 @@ export function useTetris() {
     gameTick();
   }, tickSpeed);
 
+  // Effect to handle keyboard inputs for controlling the Tetris game (movement, rotation, fast drop).
   useEffect(() => {
     if (!isPlaying) {
       return;
@@ -233,10 +272,16 @@ export function useTetris() {
     isPlaying,
     score,
     upcomingBlocks,
-    highScores: GetHighScores(),
+    highScores: getHighScores(),
   };
 }
 
+/**
+ * Calculates the points awarded based on the number of lines cleared.
+ * @param numCleared - The number of lines cleared at once.
+ * @returns The score points awarded.
+ * @throws Error if an unexpected number of lines cleared is provided.
+ */
 function getPoints(numCleared: number): number {
   switch (numCleared) {
     case 0:
@@ -254,6 +299,15 @@ function getPoints(numCleared: number): number {
   }
 }
 
+/**
+ * Adds the current dropping piece (shape) to the game board at the specified position.
+ * This function mutates the `board` parameter directly.
+ * @param board - The game board to modify.
+ * @param droppingBlock - The type of block being dropped (e.g., 'I', 'T').
+ * @param droppingShape - The current rotation shape of the block.
+ * @param droppingRow - The row index for the top of the dropping shape.
+ * @param droppingColumn - The column index for the left of the dropping shape.
+ */
 function addShapeToBoard(
   board: BoardShape,
   droppingBlock: Block,
