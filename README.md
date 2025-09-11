@@ -7,3 +7,7 @@ To run the project locally:
 1. Clone the repository
 2. Install dependencies: `npm install`
 3. Start development server: `npm run dev`
+
+## Hardcore Mode
+
+When not playing, click **Hardcore Mode** to start a game where blocks fall 20x faster.

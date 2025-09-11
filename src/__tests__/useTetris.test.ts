@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { hasCollisions, useTetrisBoard } from '../hooks/useTetrisBoard';
-import { useTetris, saveHighScore, getHighScores } from '../hooks/useTetris';
+import { useTetris, saveHighScore, GetHighScores } from '../hooks/useTetris';
 
 enum TickSpeed {
   Normal = 800,
